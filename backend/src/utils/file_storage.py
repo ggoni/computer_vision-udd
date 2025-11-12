@@ -1,7 +1,7 @@
 """File storage service for saving and retrieving uploaded files."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -50,7 +50,8 @@ class FileStorage:
         Returns:
             Path to timestamped directory
         """
-        now = datetime.utcnow()
+        # Use timezone-aware UTC datetime to avoid deprecation warnings and ensure consistency
+        now = datetime.now(timezone.utc)
         date_path = Path(str(now.year)) / f"{now.month:02d}" / f"{now.day:02d}"
         full_path = self.upload_dir / date_path
         full_path.mkdir(parents=True, exist_ok=True)

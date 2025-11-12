@@ -3,7 +3,7 @@
 This module defines the Image database table for storing uploaded image metadata.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, TYPE_CHECKING
 
 from sqlalchemy import DateTime, Integer, String, Text
@@ -35,7 +35,13 @@ class Image(BaseModel):
     
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending", doc="Processing status: pending, processing, completed, failed")
     
-    upload_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow, doc="When the image was uploaded")
+    # Use timezone-aware UTC now for default to avoid deprecation warnings and ensure consistent timestamps
+    upload_timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        doc="When the image was uploaded"
+    )
     
     # Relationships
     detections: Mapped[List["Detection"]] = relationship(
