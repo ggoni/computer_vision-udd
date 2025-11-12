@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { AuthProvider } from './auth/AuthContext';
 import UploadPage from './pages/UploadPage';
 import ImagesListPage from './pages/ImagesListPage';
 import ImageDetailPage from './pages/ImageDetailPage';
@@ -8,26 +9,28 @@ import { ToastViewport } from './components/Toast';
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <header>
-        <h1>CV Dashboard</h1>
-        <nav>
-          <Link to="/upload">Upload</Link>{' | '}
-          <Link to="/images">Images</Link>{' | '}
-          <Link to="/detections">Detections</Link>
-        </nav>
-      </header>
-      <main>
-        <Routes>
-          <Route path="/" element={<UploadPage />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/images" element={<ImagesListPage />} />
-          <Route path="/images/:id" element={<ImageDetailPage />} />
-          <Route path="/detections" element={<DetectionsPage />} />
-        </Routes>
-      </main>
-      <ToastViewport />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <header>
+          <h1>CV Dashboard</h1>
+          <nav>
+            <Link to="/upload">Upload</Link>{' | '}
+            <Link to="/images">Images</Link>{' | '}
+            <Link to="/detections">Detections</Link>
+          </nav>
+        </header>
+        <main>
+          <Routes>
+            <Route path="/" element={<UploadPage />} />
+            <Route path="/upload" element={<UploadPage />} />
+            <Route path="/images" element={<ImagesListPage />} />
+            <Route path="/images/:id" element={<ImageDetailPage />} />
+            <Route path="/detections" element={<DetectionsPage />} />
+          </Routes>
+        </main>
+        <ToastViewport />
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
