@@ -9,6 +9,17 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: cv_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U user" --health-interval=10s --health-timeout=5s --health-retries=5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,12 +31,30 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Add uv to PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Wait for Postgres
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost -U user && exit 0 || sleep 2;
+          done;
+          echo "Postgres not ready"; exit 1
       - name: Sync dependencies (dev group)
         working-directory: backend
         run: uv sync --group dev
+        env:
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/cv_db
+          APP_ENV: test
+      - name: Init DB schema
+        working-directory: backend
+        run: uv run python scripts/init_db.py
+        env:
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/cv_db
+          APP_ENV: test
       - name: Run tests
         working-directory: backend
         run: uv run pytest -q
+        env:
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/cv_db
+          APP_ENV: test
 
   frontend:
     runs-on: ubuntu-latest
