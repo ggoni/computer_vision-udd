@@ -9,6 +9,14 @@ from .file_utils import (
 )
 from .file_storage import FileStorage
 from .model_loader import ModelLoader
+from .image_processing import (
+    SUPPORTED_IMAGE_FORMATS,
+    MIN_IMAGE_SIZE,
+    MAX_IMAGE_SIZE,
+    preprocess_image,
+    resize_image,
+    image_to_bytes,
+)
 
 __all__ = [
     # File utilities
@@ -21,4 +29,11 @@ __all__ = [
     "FileStorage",
     # ML model
     "ModelLoader",
+    # Image processing
+    "SUPPORTED_IMAGE_FORMATS",
+    "MIN_IMAGE_SIZE",
+    "MAX_IMAGE_SIZE",
+    "preprocess_image",
+    "resize_image",
+    "image_to_bytes",
 ]
