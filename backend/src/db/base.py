@@ -8,49 +8,43 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Column, DateTime, String, func
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import DateTime, String, func
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models."""
-    
-    # Use type annotation syntax for SQLAlchemy 2.0
-    type_annotation_map = {
-        str: String().with_variant(String(255), "postgresql"),
-    }
 
 
 class UUIDMixin:
     """Mixin for models that need a UUID primary key."""
-    
-    id: uuid.UUID = Column(
-        UUID(as_uuid=True),
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
         nullable=False,
-        doc="Primary key UUID"
+        doc="Primary key UUID",
     )
 
 
 class TimestampMixin:
     """Mixin for models that need created_at and updated_at timestamps."""
-    
-    created_at: datetime = Column(
+
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=func.now(),
+        server_default=func.now(),
         nullable=False,
-        doc="Record creation timestamp"
+        doc="Record creation timestamp",
     )
-    
-    updated_at: datetime = Column(
+
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=func.now(),
+        server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
-        doc="Record last update timestamp"
+        doc="Record last update timestamp",
     )
 
 
