@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getImage, analyzeImage, listImageDetections } from '../api/client';
 import type { ImageResponse, DetectionResponse } from '../api/types';
 import DetectionsOverlay from '../components/DetectionsOverlay';
@@ -9,7 +9,24 @@ const ImageDetailPage: React.FC = () => {
   const { id } = useParams();
   const [showDetections, setShowDetections] = useState(false);
 
-  const imgQuery = useQuery<ImageResponse>({ queryKey: ['image', id], queryFn: () => getImage(id!) });
+  const queryClient = useQueryClient();
+  const imgQuery = useQuery<ImageResponse>({
+    queryKey: ['image', id],
+    queryFn: () => getImage(id!),
+    // Hydrate from any cached images list pages to avoid loading flicker
+    initialData: () => {
+      const candidates = queryClient.getQueriesData<{ items: ImageResponse[] }>( { queryKey: ['images'] } );
+      for (const [, data] of candidates) {
+        if (data?.items) {
+          const found = data.items.find((i) => i.id === id);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
+    // Assume hydrated data was updated very recently; conservative timestamp
+    initialDataUpdatedAt: Date.now() - 10_000,
+  });
   const detQuery = useQuery<DetectionResponse[]>({
     queryKey: ['image-dets', id, showDetections],
     queryFn: () => listImageDetections(id!),

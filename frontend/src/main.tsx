@@ -5,7 +5,15 @@ import App from './App';
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { refetchOnWindowFocus: false, retry: 1 },
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30_000, // 30s before considered stale
+      gcTime: 5 * 60_000, // cache retained for 5 minutes
+    },
+    mutations: {
+      retry: 0, // fail fast on mutations unless explicitly overridden
+    },
   },
 });
 

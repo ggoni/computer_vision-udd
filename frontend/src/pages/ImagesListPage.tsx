@@ -10,10 +10,22 @@ const ImagesListPage: React.FC = () => {
   const [status, setStatus] = useState('');
   const [filenameFilter, setFilenameFilter] = useState('');
 
-  const { data, isLoading, error } = useQuery<PaginatedResponse<ImageResponse>>({
+  type AugImage = ImageResponse & { file_size_kb: number; upload_local: string };
+  const { data, isLoading, error } = useQuery<
+    PaginatedResponse<ImageResponse>,
+    Error,
+    PaginatedResponse<AugImage>
+  >({
     queryKey: ['images', page, status, filenameFilter],
     queryFn: () => listImages({ page, page_size: pageSize, status: status || undefined, filename_substr: filenameFilter || undefined }),
-    keepPreviousData: true,
+    select: (resp) => ({
+      ...resp,
+      items: resp.items.map((img) => ({
+        ...img,
+        file_size_kb: img.file_size / 1024,
+        upload_local: new Date(img.upload_timestamp).toLocaleString(),
+      })),
+    }) as PaginatedResponse<AugImage>,
   });
 
   return (
@@ -38,12 +50,12 @@ const ImagesListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {data.items.map((img) => (
+              {data.items.map((img: AugImage) => (
                 <tr key={img.id}>
                   <td><Link to={`/images/${img.id}`}>{img.filename}</Link></td>
                   <td>{img.status}</td>
-                  <td>{(img.file_size / 1024).toFixed(1)}</td>
-                  <td>{new Date(img.upload_timestamp).toLocaleString()}</td>
+                  <td>{img.file_size_kb.toFixed(1)}</td>
+                  <td>{img.upload_local}</td>
                 </tr>
               ))}
             </tbody>
