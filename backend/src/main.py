@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.middleware import ErrorHandlerMiddleware
 from .api.routes.health import router as health_router
+from .api.routes.images import router as images_router
 from .core.config import get_settings
 from .core.logging import get_logger, setup_logging
 from .db.session import close_db
@@ -67,6 +68,7 @@ def create_app() -> FastAPI:
     
     # Include routers
     app.include_router(health_router)
+    app.include_router(images_router)
     
     return app
 
