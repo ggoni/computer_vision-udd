@@ -1,7 +1,7 @@
 """Integration tests for database models."""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -22,7 +22,7 @@ async def test_create_image_in_database():
             storage_path="2025/11/12/test_image.jpg",
             file_size=1024,
             status="pending",
-            upload_timestamp=datetime.utcnow(),
+            upload_timestamp=datetime.now(timezone.utc),
         )
         session.add(image)
         await session.commit()
@@ -50,7 +50,7 @@ async def test_create_detection_with_image():
             storage_path="2025/11/12/test_detection.jpg",
             file_size=2048,
             status="completed",
-            upload_timestamp=datetime.utcnow(),
+            upload_timestamp=datetime.now(timezone.utc),
         )
         session.add(image)
         await session.commit()
@@ -94,7 +94,7 @@ async def test_image_detection_relationship():
             storage_path="2025/11/12/relationship_test.jpg",
             file_size=3072,
             status="completed",
-            upload_timestamp=datetime.utcnow(),
+            upload_timestamp=datetime.now(timezone.utc),
         )
         session.add(image)
         await session.commit()
@@ -152,7 +152,7 @@ async def test_cascade_delete():
             storage_path="2025/11/12/cascade_test.jpg",
             file_size=4096,
             status="completed",
-            upload_timestamp=datetime.utcnow(),
+            upload_timestamp=datetime.now(timezone.utc),
         )
         session.add(image)
         await session.commit()

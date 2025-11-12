@@ -1,7 +1,7 @@
 """Unit tests for Pydantic schemas."""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 from pydantic import ValidationError
 
@@ -54,9 +54,9 @@ class TestImageSchemas:
             "storage_path": "/uploads/test.jpg",
             "file_size": 1024,
             "status": "completed",
-            "upload_timestamp": datetime.utcnow(),
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "upload_timestamp": datetime.now(timezone.utc),
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         }
         image = ImageInDB(**data)
         assert image.filename == "test.jpg"

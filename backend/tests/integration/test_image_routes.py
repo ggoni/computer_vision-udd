@@ -21,47 +21,41 @@ def _sample_jpeg_bytes() -> bytes:
     return buf.getvalue()
 
 
-def test_upload_image_returns_201():
+def _upload_image(filename: str = "test.jpg") -> str:
     data = _sample_jpeg_bytes()
     response = client.post(
         "/api/v1/images/upload",
-        files={"file": ("test.jpg", data, "image/jpeg")},
+        files={"file": (filename, data, "image/jpeg")},
     )
     assert response.status_code == 201
     body = response.json()
-    assert body["filename"] == "test.jpg"
-    assert "id" in body
-
-    # Store ID for subsequent tests (could use fixture setup in larger suite)
-    global _last_image_id
-    _last_image_id = body["id"]
+    return body["id"]
 
 
-def test_get_image_metadata():
-    # Ensure previous upload ran
-    assert _last_image_id is not None
-    response = client.get(f"/api/v1/images/{_last_image_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == _last_image_id
+def test_upload_and_metadata_and_download_and_delete_flow():
+    """End-to-end flow test without relying on global state, ensuring isolation."""
+    image_id = _upload_image()
 
+    # Metadata
+    meta_resp = client.get(f"/api/v1/images/{image_id}")
+    assert meta_resp.status_code == 200
+    assert meta_resp.json()["id"] == image_id
 
-def test_download_image_file():
-    response = client.get(f"/api/v1/images/{_last_image_id}/file")
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("image/")
-    assert len(response.content) > 0
+    # Download
+    file_resp = client.get(f"/api/v1/images/{image_id}/file")
+    assert file_resp.status_code == 200
+    assert file_resp.headers["content-type"].startswith("image/")
+    assert len(file_resp.content) > 0
+
+    # Delete
+    del_resp = client.delete(f"/api/v1/images/{image_id}")
+    assert del_resp.status_code == 204
+
+    # Confirm 404 after deletion
+    not_found_resp = client.get(f"/api/v1/images/{image_id}")
+    assert not_found_resp.status_code == 404
 
 
 def test_get_image_not_found():
     response = client.get(f"/api/v1/images/{uuid4()}")
     assert response.status_code == 404
-
-
-def test_delete_image():
-    response = client.delete(f"/api/v1/images/{_last_image_id}")
-    assert response.status_code == 204
-
-    # Verify 404 after deletion
-    response2 = client.get(f"/api/v1/images/{_last_image_id}")
-    assert response2.status_code == 404
