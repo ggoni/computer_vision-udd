@@ -36,6 +36,7 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
         <input
           type="file"
           accept="image/*"
+          data-testid="file-input"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
         <button type="submit" disabled={!file || mutation.isPending}>

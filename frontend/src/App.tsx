@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
+import { ToastProvider } from './components/Toast';
 import UploadPage from './pages/UploadPage';
 import ImagesListPage from './pages/ImagesListPage';
 import ImageDetailPage from './pages/ImageDetailPage';
@@ -10,6 +11,7 @@ import { ToastViewport } from './components/Toast';
 const App: React.FC = () => {
   return (
     <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <header>
           <h1>CV Dashboard</h1>
@@ -30,6 +32,7 @@ const App: React.FC = () => {
         </main>
         <ToastViewport />
       </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 };
