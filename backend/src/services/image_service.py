@@ -7,7 +7,7 @@ validation, persistence to storage, and database record management.
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from ..schemas.image import ImageInDB
@@ -110,3 +110,24 @@ class ImageService:
 
         # Remove DB record
         return await self._repo.delete(image_id)
+
+    async def get_paginated_images(
+        self,
+        *,
+        page: int,
+        page_size: int,
+        status: Optional[str] = None,
+        filename_substr: Optional[str] = None,
+    ) -> tuple[List[ImageInDB], int]:
+        """Return paginated images mapped to schemas with total count.
+
+        Applies optional filters and delegates to repository.
+        """
+        items, total = await self._repo.get_paginated(
+            page=page,
+            page_size=page_size,
+            status=status,
+            filename_substr=filename_substr,
+        )
+        mapped = [ImageInDB.model_validate(img) for img in items]
+        return (mapped, total)

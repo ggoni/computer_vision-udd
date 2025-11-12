@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..core.config import get_settings
 from .file_utils import get_file_hash, sanitize_filename
+from uuid import uuid4
 
 
 logger = logging.getLogger(__name__)
@@ -87,14 +88,18 @@ class FileStorage:
             # Generate file hash for uniqueness
             file_hash = get_file_hash(file_bytes)
             
-            # Create unique filename: hash_prefix + original_name
+            # Create unique filename: hash_prefix + original_name; ensure uniqueness if collision
             hash_prefix = file_hash[:8]
             file_path = Path(clean_filename)
-            unique_filename = f"{hash_prefix}_{file_path.stem}{file_path.suffix}"
+            base_name = f"{hash_prefix}_{file_path.stem}{file_path.suffix}"
             
             # Get timestamped directory
             target_dir = self._get_timestamped_dir()
-            target_path = target_dir / unique_filename
+            target_path = target_dir / base_name
+            # Handle collision by appending short random suffix until unique
+            while target_path.exists():  # pragma: no cover - rare collision path
+                suffix = uuid4().hex[:4]
+                target_path = target_dir / f"{hash_prefix}_{file_path.stem}_{suffix}{file_path.suffix}"
             
             # Save file
             target_path.write_bytes(file_bytes)

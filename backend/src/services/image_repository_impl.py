@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from src.models.image import Image
 from src.services.image_repository import ImageRepositoryInterface
@@ -62,3 +62,37 @@ class ImageRepository(ImageRepositoryInterface):
         await self._session.delete(image)
         await self._session.flush()
         return True
+
+    async def get_paginated(
+        self,
+        *,
+        page: int,
+        page_size: int,
+        status: Optional[str] = None,
+        filename_substr: Optional[str] = None,
+    ) -> Tuple[List[Image], int]:
+        """Return a page of images and total count with optional filters.
+
+        Ordered by upload timestamp desc, then created_at desc.
+        """
+        if page <= 0 or page_size <= 0:
+            return ([], 0)
+
+        stmt = select(Image)
+        if status:
+            stmt = stmt.where(Image.status == status)
+        if filename_substr:
+            like_pattern = f"%{filename_substr}%"
+            stmt = stmt.where(Image.filename.ilike(like_pattern))
+
+        count_stmt = stmt.with_only_columns(func.count()).order_by(None)
+        total = (await self._session.execute(count_stmt)).scalar_one()
+
+        page_stmt = (
+            stmt.order_by(Image.upload_timestamp.desc(), Image.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await self._session.execute(page_stmt)
+        items = list(result.scalars().all())
+        return (items, total)
