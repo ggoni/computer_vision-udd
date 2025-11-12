@@ -28,17 +28,23 @@ def get_engine():
         
         logger.info("Creating database engine", extra={"database_url": settings.DATABASE_URL.split("@")[-1]})
         
+        engine_kwargs = {
+            "pool_pre_ping": True,
+            "pool_recycle": 3600,
+            "echo": settings.DEBUG and settings.LOG_LEVEL.upper() == "DEBUG",
+        }
+
+        if settings.APP_ENV == "test":
+            engine_kwargs["poolclass"] = NullPool
+        else:
+            engine_kwargs.update({
+                "pool_size": 20,
+                "max_overflow": 10,
+            })
+
         _engine = create_async_engine(
             settings.DATABASE_URL,
-            # Connection pool settings
-            pool_size=20,
-            max_overflow=10,
-            pool_pre_ping=True,
-            pool_recycle=3600,  # 1 hour
-            # Use NullPool for testing environments
-            poolclass=NullPool if settings.APP_ENV == "test" else None,
-            # Echo SQL in debug mode
-            echo=settings.DEBUG and settings.LOG_LEVEL.upper() == "DEBUG",
+            **engine_kwargs,
         )
         
         logger.info("Database engine created successfully")
