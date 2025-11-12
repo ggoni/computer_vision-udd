@@ -43,12 +43,18 @@ class FakeDetectionService(DetectionService):  # type: ignore[misc]
 
 client = TestClient(app)
 
-# Override dependency
+# Override dependency with fixture to ensure cleanup
 from src.api.routes.detection import get_detection_service  # type: ignore
 
-app.dependency_overrides[get_detection_service] = lambda: FakeDetectionService(  # type: ignore
-    detection_repo=None, cv_service=None, image_repo=None, storage=None
-)
+import pytest
+
+@pytest.fixture(autouse=True)
+def _override_detection_service():
+    app.dependency_overrides[get_detection_service] = lambda: FakeDetectionService(  # type: ignore
+        detection_repo=None, cv_service=None, image_repo=None, storage=None
+    )
+    yield
+    app.dependency_overrides.pop(get_detection_service, None)
 
 
 def test_analyze_image_and_list_detections(monkeypatch):

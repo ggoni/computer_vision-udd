@@ -35,6 +35,13 @@ def test_upload_duplicate_returns_409(monkeypatch):
 
 
 def test_analyze_nonexistent_image_returns_404():
-    random_id = uuid4()
+    # Generate an ID not present in DB (guard against extremely unlikely UUID collision)
+    attempt = 0
+    while attempt < 3:
+        random_id = uuid4()
+        meta = client.get(f"/api/v1/images/{random_id}")
+        if meta.status_code == 404:
+            break
+        attempt += 1
     resp = client.post(f"/api/v1/images/{random_id}/analyze")
     assert resp.status_code == 404
