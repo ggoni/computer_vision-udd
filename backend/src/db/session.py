@@ -112,7 +112,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             logger.debug("Database session committed")
         except Exception as e:
             logger.error(
-                "Database session error, rolling back", 
+                "Database session error, rolling back",
                 extra={"error": str(e), "error_type": type(e).__name__}
             )
             await session.rollback()
@@ -160,21 +160,21 @@ async def check_db_connection() -> bool:
 # AsyncPG-style transaction context manager following best practices
 class DatabaseQueryMonitor:
     """Database query monitoring context manager following asyncpg patterns."""
-    
+
     def __init__(self, operation_name: str):
         self.operation_name = operation_name
         self.start_time = None
-    
+
     async def __aenter__(self):
         import time
         self.start_time = time.time()
         logger.debug(f"Starting database operation: {self.operation_name}")
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         import time
         duration = time.time() - self.start_time
-        
+
         if exc_type:
             logger.error(
                 f"Database operation failed: {self.operation_name}",

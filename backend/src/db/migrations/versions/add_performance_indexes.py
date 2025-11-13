@@ -5,8 +5,8 @@ Revises: 7d07ec59210b
 Create Date: 2025-11-13 03:40:00.000000
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'add_performance_indexes'
@@ -24,7 +24,7 @@ def upgrade() -> None:
         ['status'],
         unique=False
     )
-    
+
     # Index for ordering by upload_timestamp (descending for recent first)
     op.create_index(
         'ix_images_upload_timestamp_desc',
@@ -32,7 +32,7 @@ def upgrade() -> None:
         [sa.text('upload_timestamp DESC')],
         unique=False
     )
-    
+
     # Index for filename searches (case-insensitive)
     op.create_index(
         'ix_images_filename_lower',
@@ -40,7 +40,7 @@ def upgrade() -> None:
         [sa.text('LOWER(filename)')],
         unique=False
     )
-    
+
     # Composite index for common query patterns (status + upload_timestamp)
     op.create_index(
         'ix_images_status_upload_timestamp',
@@ -48,7 +48,7 @@ def upgrade() -> None:
         ['status', sa.text('upload_timestamp DESC')],
         unique=False
     )
-    
+
     # Index for created_at for secondary ordering
     op.create_index(
         'ix_images_created_at_desc',
