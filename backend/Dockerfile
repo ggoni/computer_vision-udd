@@ -1,10 +1,11 @@
-# Backend Dockerfile - Multi-stage build for production-ready FastAPI app
+# Backend Dockerfile - Multi-stage build optimized for CI/CD
 FROM python:3.12-slim AS base
 
-# Install system dependencies
+# Install system dependencies (minimal)
 RUN apt-get update && apt-get install -y \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Install uv package manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -12,15 +13,22 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
-
 # Stage 1: Dependencies
 FROM base AS dependencies
 
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
+# Set environment variables to reduce disk usage during build
+ENV UV_CACHE_DIR=/tmp/uv-cache
+ENV TORCH_HOME=/tmp/torch-cache
+
 # Sync dependencies (production only, no dev group)
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev \
+    && rm -rf /tmp/uv-cache \
+    && rm -rf /tmp/torch-cache \
+    && find /app/.venv -type f -name "*.pyc" -delete \
+    && find /app/.venv -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 
 # Stage 2: Production
