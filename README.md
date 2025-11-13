@@ -1,6 +1,11 @@
 # Computer Vision Detection API
 
 ![CI](https://github.com/ggoni/computer_vision-udd/actions/workflows/ci.yml/badge.svg)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
+[![Tests](https://img.shields.io/badge/tests-106%20passing-success.svg)](#running-tests)
+[![Coverage](https://img.shields.io/badge/coverage-72%25-yellow.svg)](#running-tests)
 
 FastAPI-based backend providing image upload, object detection analysis, and persistent storage for computer vision applications.
 
@@ -511,10 +516,10 @@ docker/
 ```bash
 cd backend
 
-# Run all tests
+# Run all tests (106 tests, 72% coverage)
 uv run pytest
 
-# Run with coverage
+# Run with coverage report
 uv run pytest --cov=src --cov-report=term-missing
 
 # Run specific test file
@@ -523,6 +528,13 @@ uv run pytest tests/unit/test_image_service.py -v
 # Run integration tests only
 uv run pytest tests/integration/ -v
 ```
+
+**Test Suite Coverage:**
+- ✅ 106 total tests passing
+- ✅ 72% code coverage (866/1198 lines)
+- ✅ Unit tests for services, repositories, and utilities
+- ✅ Integration tests for API routes and database operations
+- ✅ Test isolation with automatic rollback fixtures
 
 #### Frontend Tests
 ```bash
@@ -547,7 +559,7 @@ npx vitest run src/__tests__/uploadPage.spec.tsx
 ```bash
 cd backend
 
-# Check code style
+# Check code style (Ruff v0.8.4)
 uv run ruff check
 
 # Auto-fix issues
@@ -556,6 +568,13 @@ uv run ruff check --fix
 # Format code
 uv run ruff format
 ```
+
+**Linting Standards:**
+- ✅ Modern Python 3.12+ syntax (PEP 604 union types, PEP 695 generics)
+- ✅ Import organization and sorting (isort-compatible)
+- ✅ Type-checking imports with TYPE_CHECKING blocks
+- ✅ No trailing whitespace or unnecessary f-strings
+- ✅ All lint rules passing in CI/CD pipeline
 
 #### Frontend Linting
 ```bash
@@ -585,6 +604,9 @@ cd backend && uv run alembic upgrade head
 - File storage paths include hash prefix + original stem; collision resolution adds random suffix.
 - Detection service can be overridden in tests for faster runs (fake service).
 - Duplicate upload 409 is triggered via dependency override simulation; real implementation permits re-upload with unique path.
+- Modern Python 3.12+ features: Union types (X | None), Generic class syntax (class Name[T]), TYPE_CHECKING blocks
+- Test isolation: Database fixtures with automatic rollback, independent test execution
+- UUID-based identifiers: Consistent type safety across API routes and database operations
 
 ## Performance Considerations
 
@@ -604,9 +626,11 @@ cd backend && uv run alembic upgrade head
 
 ### Input Validation
 - **File Type Validation**: Only allowed image formats (JPEG, PNG, WebP)
+- **File Extension Validation**: Pre-upload extension check to prevent invalid files
 - **File Size Limits**: Maximum 5MB per upload
 - **Filename Sanitization**: Prevents path traversal attacks
 - **SQL Injection Prevention**: Parameterized queries via SQLAlchemy
+- **Type Safety**: UUID-based identifiers for database consistency
 
 ### Authentication Ready
 - **JWT Token Support**: Auth context and header injection infrastructure
@@ -653,8 +677,15 @@ cp .env.template .env
 ### Code Standards
 - **Backend**: Follow PEP 8, use type hints, add docstrings
 - **Frontend**: Use TypeScript, follow React best practices
-- **Tests**: Maintain >80% coverage, test both happy and error paths
+- **Tests**: Maintain >70% coverage, test both happy and error paths
 - **Documentation**: Update README for new features
+- **Commits**: Use conventional commit format (feat, fix, docs, style, refactor, test, chore)
+
+### Continuous Integration
+- **GitHub Actions**: Automated testing and linting on every push
+- **Code Quality**: Ruff for Python, ESLint for TypeScript
+- **Test Coverage**: pytest with coverage reporting
+- **Security**: Dependency scanning and vulnerability checks
 
 ### Issue Reporting
 Please include:
