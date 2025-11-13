@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DetectionsPage from '../pages/DetectionsPage';
@@ -38,14 +39,14 @@ describe('DetectionsPage', () => {
     expect(screen.getByText(/dog/)).toBeTruthy();
     
     // apply label filter
-    await user.type(screen.getByPlaceholderText(/Label/), 'cat');
-    await user.click(screen.getByRole('button', { name: /Apply/i }));
+    await user.type(screen.getByPlaceholderText(/Etiqueta/), 'cat');
+    await user.click(screen.getByRole('button', { name: /Aplicar/i }));
     await waitFor(() => expect(screen.queryByText(/dog/)).toBeNull());
     
     // apply min confidence
-    await user.clear(screen.getByPlaceholderText(/Min conf/));
-    await user.type(screen.getByPlaceholderText(/Min conf/), '0.93');
-    await user.click(screen.getByRole('button', { name: /Apply/i }));
+    await user.clear(screen.getByPlaceholderText(/Conf mínima/));
+    await user.type(screen.getByPlaceholderText(/Conf mínima/), '0.93');
+    await user.click(screen.getByRole('button', { name: /Aplicar/i }));
     await waitFor(() => {
       expect(screen.getAllByText(/cat/).length).toBe(1); // only high confidence cat remains
       expect(screen.queryByText(/dog/)).toBeNull();

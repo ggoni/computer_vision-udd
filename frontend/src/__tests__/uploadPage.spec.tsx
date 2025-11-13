@@ -27,12 +27,12 @@ describe('UploadPage', () => {
   const input = screen.getByTestId('file-input') as HTMLInputElement;
     const file = new File(['dummy'], 'test.png', { type: 'image/png' });
     await user.upload(input, file);
-    await user.click(screen.getByRole('button', { name: /upload/i }));
+    await user.click(screen.getByRole('button', { name: /subir/i }));
     // Wait for toast and card
   const card = await screen.findByText('test.png');
     expect(card).toBeInTheDocument();
     // Toast container should contain Uploaded message
-    const toast = await screen.findByText(/Uploaded: test.png/);
+    const toast = await screen.findByText(/Subido: test.png/);
     expect(toast).toBeInTheDocument();
     expect(client.uploadImage).toHaveBeenCalled();
   });
