@@ -16,27 +16,27 @@ const DetectionsPage: React.FC = () => {
 
   return (
     <div>
-      <h2>Detections</h2>
+      <h2>Detecciones</h2>
       <div className="input-row">
-        <input placeholder="Label" value={label} onChange={(e) => setLabel(e.target.value)} />
+        <input placeholder="Etiqueta" value={label} onChange={(e) => setLabel(e.target.value)} />
         <input
           type="number"
-            placeholder="Min conf"
+            placeholder="Conf. mín"
             value={minConf}
             onChange={(e) => setMinConf(e.target.value === '' ? '' : Number(e.target.value))}
         />
-        <button onClick={() => setPage(1)}>Apply</button>
+        <button onClick={() => setPage(1)}>Aplicar</button>
       </div>
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <p>Cargando...</p>}
       {error && <p style={{ color: '#ef4444' }}>{(error as any).message}</p>}
       {data && (
         <>
           <table className="table">
             <thead>
               <tr>
-                <th>Label</th>
-                <th>Confidence</th>
-                <th>Image</th>
+                <th>Etiqueta</th>
+                <th>Confianza</th>
+                <th>Imagen</th>
               </tr>
             </thead>
             <tbody>
@@ -50,9 +50,9 @@ const DetectionsPage: React.FC = () => {
             </tbody>
           </table>
           <div style={{ marginTop: '.75rem', display: 'flex', gap: '.5rem' }}>
-            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-            <span>Page {page} / {data.pages}</span>
-            <button disabled={!data.has_next} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</button>
+            <span>Página {page} / {data.pages}</span>
+            <button disabled={!data.has_next} onClick={() => setPage((p) => p + 1)}>Siguiente</button>
           </div>
         </>
       )}

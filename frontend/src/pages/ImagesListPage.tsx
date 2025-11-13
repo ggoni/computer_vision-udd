@@ -30,23 +30,23 @@ const ImagesListPage: React.FC = () => {
 
   return (
     <div>
-      <h2>Images</h2>
+      <h2>Imágenes</h2>
       <div className="input-row">
-        <input placeholder="Status" value={status} onChange={(e) => setStatus(e.target.value)} />
-        <input placeholder="Filename contains" value={filenameFilter} onChange={(e) => setFilenameFilter(e.target.value)} />
-        <button onClick={() => setPage(1)}>Apply Filters</button>
+        <input placeholder="Estado" value={status} onChange={(e) => setStatus(e.target.value)} />
+        <input placeholder="Nombre contiene" value={filenameFilter} onChange={(e) => setFilenameFilter(e.target.value)} />
+        <button onClick={() => setPage(1)}>Aplicar Filtros</button>
       </div>
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <p>Cargando...</p>}
       {error && <p style={{ color: '#ef4444' }}>{(error as any).message}</p>}
       {data && (
         <>
           <table className="table">
             <thead>
               <tr>
-                <th>Filename</th>
-                <th>Status</th>
-                <th>Size (KB)</th>
-                <th>Uploaded</th>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Tamaño (KB)</th>
+                <th>Subida</th>
               </tr>
             </thead>
             <tbody>
@@ -61,9 +61,9 @@ const ImagesListPage: React.FC = () => {
             </tbody>
           </table>
           <div style={{ marginTop: '.75rem', display: 'flex', gap: '.5rem' }}>
-            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-            <span>Page {page} / {data.pages}</span>
-            <button disabled={!data.has_next} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</button>
+            <span>Página {page} / {data.pages}</span>
+            <button disabled={!data.has_next} onClick={() => setPage((p) => p + 1)}>Siguiente</button>
           </div>
         </>
       )}

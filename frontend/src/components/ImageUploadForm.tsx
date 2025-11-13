@@ -40,7 +40,7 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
         <button type="submit" disabled={!file || mutation.isPending}>
-          {mutation.isPending ? 'Uploading...' : 'Upload'}
+          {mutation.isPending ? 'Subiendo...' : 'Subir'}
         </button>
       </div>
       {mutation.isError && <p style={{ color: '#ef4444' }}>{(mutation.error as any)?.message}</p>}

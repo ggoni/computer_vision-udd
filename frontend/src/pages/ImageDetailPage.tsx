@@ -38,8 +38,8 @@ const ImageDetailPage: React.FC = () => {
     onSuccess: () => setShowDetections(true),
   });
 
-  if (imgQuery.isLoading) return <p>Loading...</p>;
-  if (imgQuery.isError) return <p>Error loading image</p>;
+  if (imgQuery.isLoading) return <p>Cargando...</p>;
+  if (imgQuery.isError) return <p>Error al cargar imagen</p>;
 
   const img = imgQuery.data!;
   const fileUrl = `/api/v1/images/${img.id}/file`;
@@ -47,10 +47,10 @@ const ImageDetailPage: React.FC = () => {
   return (
     <div>
       <h2>{img.filename}</h2>
-      <p>Status: {img.status}</p>
-      <button onClick={() => analyze.mutate()} disabled={analyze.isPending}>Analyze</button>{' '}
+      <p>Estado: {img.status}</p>
+      <button onClick={() => analyze.mutate()} disabled={analyze.isPending}>Analizar</button>{' '}
       <button onClick={() => setShowDetections((s) => !s)} disabled={detQuery.isLoading}>
-        {showDetections ? 'Hide Detections' : 'Show Detections'}
+        {showDetections ? 'Ocultar Detecciones' : 'Mostrar Detecciones'}
       </button>
       <div style={{ marginTop: '1rem' }}>
         {showDetections && detQuery.data && detQuery.data.length > 0 ? (
