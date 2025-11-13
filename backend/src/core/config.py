@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # ML Model Configuration
     MODEL_NAME: str = Field(
-        default="huggingface/yolos-tiny",
+        default="hustvl/yolos-tiny",
         description="Hugging Face model identifier for object detection",
     )
     MODEL_CACHE_DIR: str = Field(

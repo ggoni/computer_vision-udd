@@ -11,6 +11,7 @@ from PIL import Image
 from src.core.config import get_settings
 from src.services.cv_service_interface import CVServiceInterface
 from src.utils import ModelLoader
+from src.utils.label_translations import translate_label
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +72,10 @@ class YOLOSCVService(CVServiceInterface):
                 continue
 
             box = item.get("box") or {}
+            original_label = item.get("label", "unknown")
             detections.append(
                 {
-                    "label": item.get("label", "unknown"),
+                    "label": translate_label(original_label),
                     "confidence_score": score,
                     "bbox": {
                         "xmin": int(round(box.get("xmin", box.get("x", 0)))),
