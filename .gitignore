@@ -63,3 +63,4 @@ Thumbs.db
 *.log
 *.out
 *.backup
+storage/
