@@ -1,4 +1,7 @@
 # Configuration for Jupyter Lab
+# This is a standard Jupyter configuration file where 'c' is the configuration object
+# ruff: noqa: F821
+
 c.ServerApp.ip = '0.0.0.0'
 c.ServerApp.port = 8888
 c.ServerApp.open_browser = False
