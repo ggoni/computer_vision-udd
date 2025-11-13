@@ -45,34 +45,17 @@ class JSONFormatter(logging.Formatter):
             log_entry["exception"] = self.formatException(record.exc_info)
 
         # Add any extra fields from the log record
-        extra_fields = {
-            key: value
-            for key, value in record.__dict__.items()
-            if key
-            not in {
-                "name",
-                "msg",
-                "args",
-                "levelname",
-                "levelno",
-                "pathname",
-                "filename",
-                "module",
-                "lineno",
-                "funcName",
-                "created",
-                "msecs",
-                "relativeCreated",
-                "thread",
-                "threadName",
-                "processName",
-                "process",
-                "getMessage",
-                "exc_info",
-                "exc_text",
-                "stack_info",
-            }
-        }
+        extra_fields = {}
+        for key, value in record.__dict__.items():
+            if key not in {
+                "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
+                "module", "lineno", "funcName", "created", "msecs", "relativeCreated",
+                "thread", "threadName", "processName", "process", "getMessage",
+                "exc_info", "exc_text", "stack_info"
+            }:
+                # Safely add extra fields, avoid overwriting existing keys
+                if key not in log_entry:
+                    extra_fields[key] = value
 
         if extra_fields:
             log_entry["extra"] = extra_fields
