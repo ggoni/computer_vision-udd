@@ -24,8 +24,13 @@ FastAPI-based backend providing image upload, object detection analysis, and pag
    # Using Docker (recommended)
    docker run --name cv-postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=cv_db -p 5432:5432 -d postgres:15
    
-   # Or install PostgreSQL locally and create database
-   createdb cv_db
+   # Or install PostgreSQL locally and create database with user
+   createuser -s user  # Create the user with superuser privileges
+   createdb -O user cv_db  # Create database owned by user
+   
+   # Or use your existing PostgreSQL user (replace 'your_username' with your actual username)
+   # createdb cv_db
+   # Then update DATABASE_URL to use your username instead of 'user'
    ```
 
 3. **Start the backend**
@@ -42,8 +47,8 @@ FastAPI-based backend providing image upload, object detection analysis, and pag
    # Initialize database schema
    uv run python scripts/init_db.py
    
-   # Start the server
-   uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+   # Start the server (set PYTHONPATH to include current directory)
+   PYTHONPATH=. uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
 4. **Start the frontend** (in a new terminal)
@@ -58,7 +63,7 @@ FastAPI-based backend providing image upload, object detection analysis, and pag
    ```
 
 5. **Open the application**
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhupost:5173
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
@@ -164,7 +169,7 @@ VITE_API_BASE_URL=http://localhost:8000
 uv run python -c "from src.db.session import check_db_connection; import asyncio; print(asyncio.run(check_db_connection()))"
 
 # View logs with debug info
-APP_ENV=development uv run uvicorn src.main:app --log-level debug
+APP_ENV=development PYTHONPATH=. uv run uvicorn src.main:app --log-level debug
 
 # Reset database schema
 uv run python scripts/init_db.py
@@ -185,6 +190,7 @@ npm run test
 
 #### Common Issues
 - **Database connection failed**: Ensure PostgreSQL is running and credentials are correct
+- **Role "user" does not exist**: Create the user with `createuser -s user` or use your existing PostgreSQL username in DATABASE_URL
 - **Model download slow**: First run downloads ~100MB model, subsequent runs are fast
 - **File upload fails**: Check file size (<5MB) and format (jpg/png/webp)
 - **CORS errors**: Ensure backend is running on port 8000 and frontend on 5173
@@ -388,7 +394,7 @@ cd backend && uv run alembic upgrade head
 ### Production Recommendations
 ```bash
 # Backend production server
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
+PYTHONPATH=. uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
 
 # Frontend production build
 cd frontend && npm run build
