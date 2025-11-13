@@ -10,8 +10,11 @@ from src.services.image_service import ImageService
 
 
 class DummyImage:
+    """Mock ORM object compatible with Pydantic model_validate."""
     def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+        # Set attributes directly to make them accessible via getattr
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 @pytest_asyncio.fixture
