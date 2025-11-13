@@ -3,58 +3,115 @@ version: '3.8'
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: cv_postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: cv_db
+      POSTGRES_USER: cvuser
+      POSTGRES_PASSWORD: cvpass123
+      POSTGRES_DB: computer_vision_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ["CMD-SHELL", "pg_isready -U cvuser -d computer_vision_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - cv-network
 
-  # Backend FastAPI Application
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: cv_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass redis123
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "redis123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cv-network
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: cv_minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minio123456
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - cv-network
+
+  # FastAPI Backend
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/api/Dockerfile
     container_name: cv_backend
     environment:
-      DATABASE_URL: postgresql+asyncpg://user:password@postgres:5432/cv_db
-      APP_ENV: production
+      DATABASE_URL: postgresql+asyncpg://cvuser:cvpass123@postgres:5432/computer_vision_db
+      REDIS_URL: redis://:redis123@redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minio123456
       MODEL_NAME: hustvl/yolos-tiny
       CONFIDENCE_THRESHOLD: 0.5
+      APP_ENV: production
+      CORS_ORIGINS: http://localhost:3000,http://localhost:80
+      PROMETHEUS_METRICS: true
     ports:
       - "8000:8000"
+      - "8001:8001"
+    volumes:
+      - model_cache:/app/.cache
+      - ./storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      # Mount for model cache to avoid re-downloading
-      - model_cache:/root/.cache/huggingface
-      # Mount for uploaded images (optional, for persistence)
-      - ./storage:/app/storage
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - cv-network
 
-  # Frontend React Application
+  # React Frontend
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: ../docker/frontend/Dockerfile
     container_name: cv_frontend
     ports:
-      - "80:80"
+      - "3000:80"
     depends_on:
       - backend
     healthcheck:
@@ -62,10 +119,62 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - cv-network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cv_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - cv-network
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cv_grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: grafana123
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/dashboard-configs:/etc/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - cv-network
 
 volumes:
   postgres_data:
     driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
   model_cache:
     driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  cv-network:
+    driver: bridge
