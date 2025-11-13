@@ -13,3 +13,52 @@ wheels/
 .venv
 backend/storage/
 frontend/coverage/
+
+# MLOps & Docker
+.env
+docker-compose.override.yml
+backups/
+logs/
+experiments/
+notebooks/.ipynb_checkpoints/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+loki_data/
+
+# MinIO/Object Storage
+minio_data/
+*.minio
+
+# ML Models & Cache
+models/
+model_cache/
+.transformers_cache/
+.torch_cache/
+
+# Jupyter Lab
+.jupyter/
+.ipython/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.out
