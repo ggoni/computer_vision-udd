@@ -79,7 +79,7 @@ services:
       MODEL_NAME: hustvl/yolos-tiny
       CONFIDENCE_THRESHOLD: 0.5
       APP_ENV: production
-      CORS_ORIGINS: http://localhost:3000,http://localhost:80
+      SECRET_KEY: your-secret-key-here-production-use-secure-value
       PROMETHEUS_METRICS: true
     ports:
       - "8000:8000"
