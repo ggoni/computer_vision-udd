@@ -62,12 +62,15 @@ jobs:
           # Multi-platform support (optional, uncomment if needed)
           # platforms: linux/amd64,linux/arm64
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
+      # Attestations require additional repository permissions
+      # Uncomment and configure repository settings if needed:
+      # Settings > Actions > General > Workflow permissions > Read and write permissions
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v1
+      #   with:
+      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+      #     subject-digest: ${{ steps.build.outputs.digest }}
+      #     push-to-registry: true
 
   build-frontend:
     name: Build Frontend Docker Image
@@ -115,12 +118,15 @@ jobs:
           # Multi-platform support (optional, uncomment if needed)
           # platforms: linux/amd64,linux/arm64
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
+      # Attestations require additional repository permissions
+      # Uncomment and configure repository settings if needed:
+      # Settings > Actions > General > Workflow permissions > Read and write permissions
+      # - name: Generate artifact attestation
+      #   uses: actions/attest-build-provenance@v1
+      #   with:
+      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
+      #     subject-digest: ${{ steps.build.outputs.digest }}
+      #     push-to-registry: true
 
   deploy:
     name: Deploy to Production
