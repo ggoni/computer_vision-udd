@@ -28,10 +28,16 @@ docker-compose up -d
 ```
 
 **🌐 Access Points:**
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:3000 (Docker deployment)
 - **API Documentation**: http://localhost:8000/docs
 - **Grafana Monitoring**: http://localhost:3001 (admin/grafana123)
-- **MinIO Storage**: http://localhost:9001 (minioadmin/minio123456)
+- **Prometheus Metrics**: http://localhost:9090
+- **MinIO Storage Console**: http://localhost:9001 (minioadmin/minio123456)
+- **MinIO API**: http://localhost:9000
+- **PostgreSQL**: localhost:5432 (cvuser/cvpass123)
+- **Redis**: localhost:6379
+
+> **Note**: Docker deployment uses port 3000 for frontend, while development mode uses port 5173.
 
 ### What Gets Started
 - ✅ **Frontend**: React application for image upload and analysis
@@ -116,7 +122,7 @@ docker-compose logs backend
    ```
 
 5. **Open the application**
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhost:5173 (development server)
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
