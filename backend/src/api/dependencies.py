@@ -85,7 +85,7 @@ async def verify_upload_size(
         logger.warning(
             "File upload rejected - too large",
             extra={
-                "filename": file.filename,
+                "upload_filename": file.filename,
                 "file_size": file_size,
                 "max_size": settings.MAX_UPLOAD_SIZE,
             },
@@ -101,7 +101,7 @@ async def verify_upload_size(
 
     logger.info(
         "File upload size validated",
-        extra={"filename": file.filename, "file_size": file_size},
+        extra={"upload_filename": file.filename, "file_size": file_size},
     )
 
     return file
@@ -133,7 +133,7 @@ def validate_image_file(file: UploadFile) -> UploadFile:
         logger.warning(
             "File upload rejected - invalid type",
             extra={
-                "filename": file.filename,
+                "upload_filename": file.filename,
                 "content_type": file.content_type,
                 "allowed_types": list(allowed_types),
             },
@@ -156,7 +156,7 @@ def validate_image_file(file: UploadFile) -> UploadFile:
             logger.warning(
                 "File upload rejected - invalid extension",
                 extra={
-                    "filename": file.filename,
+                    "upload_filename": file.filename,
                     "extension": file_extension,
                     "allowed_extensions": list(allowed_extensions),
                 },
@@ -172,7 +172,7 @@ def validate_image_file(file: UploadFile) -> UploadFile:
 
     logger.info(
         "Image file validated",
-        extra={"filename": file.filename, "content_type": file.content_type},
+        extra={"upload_filename": file.filename, "content_type": file.content_type},
     )
 
     return file
