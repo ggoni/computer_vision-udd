@@ -1,14 +1,12 @@
 """File storage service for saving and retrieving uploaded files."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
+from uuid import uuid4
 
 from ..core.config import get_settings
 from .file_utils import get_file_hash, sanitize_filename
-from uuid import uuid4
-
 
 logger = logging.getLogger(__name__)
 
@@ -16,22 +14,22 @@ logger = logging.getLogger(__name__)
 class FileStorage:
     """
     Service for managing file storage operations.
-    
+
     Handles saving, retrieving, and deleting files with organized directory structure.
     Files are stored in timestamped subdirectories (YYYY/MM/DD) for better organization.
     """
 
-    def __init__(self, upload_dir: Optional[Path] = None):
+    def __init__(self, upload_dir: Path | None = None):
         """
         Initialize FileStorage service.
-        
+
         Args:
             upload_dir: Base directory for file uploads. If None, uses settings.
         """
         if upload_dir is None:
             settings = get_settings()
             upload_dir = settings.upload_path
-        
+
         self.upload_dir = Path(upload_dir)
         self._ensure_upload_dir()
 
@@ -47,12 +45,12 @@ class FileStorage:
     def _get_timestamped_dir(self) -> Path:
         """
         Get timestamped subdirectory for current date (YYYY/MM/DD).
-        
+
         Returns:
             Path to timestamped directory
         """
         # Use timezone-aware UTC datetime to avoid deprecation warnings and ensure consistency
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         date_path = Path(str(now.year)) / f"{now.month:02d}" / f"{now.day:02d}"
         full_path = self.upload_dir / date_path
         full_path.mkdir(parents=True, exist_ok=True)
@@ -61,20 +59,20 @@ class FileStorage:
     def save_file(self, file_bytes: bytes, filename: str) -> str:
         """
         Save file to storage with unique filename.
-        
+
         Generates unique filename using file hash and original name.
         Stores in timestamped subdirectory for organization.
-        
+
         Args:
             file_bytes: Raw bytes of the file
             filename: Original filename
-            
+
         Returns:
             Relative storage path from upload_dir (e.g., "2025/11/12/abc123_photo.jpg")
-            
+
         Raises:
             IOError: If file cannot be saved
-            
+
         Example:
             >>> storage = FileStorage()
             >>> path = storage.save_file(b"image data", "photo.jpg")
@@ -84,47 +82,50 @@ class FileStorage:
         try:
             # Sanitize original filename
             clean_filename = sanitize_filename(filename)
-            
+
             # Generate file hash for uniqueness
             file_hash = get_file_hash(file_bytes)
-            
+
             # Create unique filename: hash_prefix + original_name; ensure uniqueness if collision
             hash_prefix = file_hash[:8]
             file_path = Path(clean_filename)
             base_name = f"{hash_prefix}_{file_path.stem}{file_path.suffix}"
-            
+
             # Get timestamped directory
             target_dir = self._get_timestamped_dir()
             target_path = target_dir / base_name
             # Handle collision by appending short random suffix until unique
             while target_path.exists():  # pragma: no cover - rare collision path
                 suffix = uuid4().hex[:4]
-                target_path = target_dir / f"{hash_prefix}_{file_path.stem}_{suffix}{file_path.suffix}"
-            
+                target_path = (
+                    target_dir
+                    / f"{hash_prefix}_{file_path.stem}_{suffix}{file_path.suffix}"
+                )
+
             # Save file
             target_path.write_bytes(file_bytes)
-            
+
             # Return relative path from upload_dir
             relative_path = target_path.relative_to(self.upload_dir)
             storage_path = str(relative_path)
-            
+
             logger.info(f"File saved: {storage_path} ({len(file_bytes)} bytes)")
             return storage_path
-            
+
         except Exception as e:
             logger.error(f"Failed to save file {filename}: {e}")
-            raise IOError(f"Could not save file: {e}") from e
+            raise OSError(f"Could not save file: {e}") from e
 
     def get_file_path(self, storage_path: str) -> Path:
         """
         Get absolute filesystem path for a stored file.
-        
+
         Args:
             storage_path: Relative storage path from save_file()
-            
+
         Returns:
             Absolute Path object to the file
-            
+
         Example:
             >>> storage = FileStorage()
             >>> path = storage.get_file_path("2025/11/12/abc123_photo.jpg")
@@ -136,13 +137,13 @@ class FileStorage:
     def file_exists(self, storage_path: str) -> bool:
         """
         Check if file exists in storage.
-        
+
         Args:
             storage_path: Relative storage path
-            
+
         Returns:
             True if file exists, False otherwise
-            
+
         Example:
             >>> storage = FileStorage()
             >>> storage.file_exists("2025/11/12/abc123_photo.jpg")
@@ -158,13 +159,13 @@ class FileStorage:
     def delete_file(self, storage_path: str) -> bool:
         """
         Delete file from storage.
-        
+
         Args:
             storage_path: Relative storage path
-            
+
         Returns:
             True if file was deleted, False if file didn't exist or error occurred
-            
+
         Example:
             >>> storage = FileStorage()
             >>> storage.delete_file("2025/11/12/abc123_photo.jpg")
@@ -172,26 +173,26 @@ class FileStorage:
         """
         try:
             file_path = self.get_file_path(storage_path)
-            
+
             if not file_path.exists():
                 logger.warning(f"Cannot delete non-existent file: {storage_path}")
                 return False
-            
+
             file_path.unlink()
             logger.info(f"File deleted: {storage_path}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to delete file {storage_path}: {e}")
             return False
 
-    def get_file_size(self, storage_path: str) -> Optional[int]:
+    def get_file_size(self, storage_path: str) -> int | None:
         """
         Get size of stored file in bytes.
-        
+
         Args:
             storage_path: Relative storage path
-            
+
         Returns:
             File size in bytes, or None if file doesn't exist
         """

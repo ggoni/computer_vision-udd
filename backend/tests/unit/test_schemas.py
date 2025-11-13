@@ -1,13 +1,18 @@
 """Unit tests for Pydantic schemas."""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
+
+import pytest
 from pydantic import ValidationError
 
-from src.schemas.image import ImageBase, ImageCreate, ImageUpdate, ImageInDB
-from src.schemas.detection import BoundingBox, DetectionBase, DetectionCreate, DetectionInDB
 from src.schemas.common import PaginatedResponse
+from src.schemas.detection import (
+    BoundingBox,
+    DetectionBase,
+    DetectionCreate,
+)
+from src.schemas.image import ImageBase, ImageCreate, ImageInDB, ImageUpdate
 
 
 class TestImageSchemas:
@@ -15,7 +20,9 @@ class TestImageSchemas:
 
     def test_image_base_valid(self):
         """Test ImageBase with valid data."""
-        image = ImageBase(filename="test.jpg", original_url="https://example.com/image.jpg")
+        image = ImageBase(
+            filename="test.jpg", original_url="https://example.com/image.jpg"
+        )
         assert image.filename == "test.jpg"
         assert image.original_url == "https://example.com/image.jpg"
 
@@ -23,7 +30,10 @@ class TestImageSchemas:
         """Test that filename validation prevents path traversal."""
         with pytest.raises(ValidationError) as exc_info:
             ImageBase(filename="../etc/passwd")
-        assert "path" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
+        assert (
+            "path" in str(exc_info.value).lower()
+            or "invalid" in str(exc_info.value).lower()
+        )
 
     def test_image_base_rejects_forward_slash(self):
         """Test that filename with forward slash is rejected."""
@@ -54,9 +64,9 @@ class TestImageSchemas:
             "storage_path": "/uploads/test.jpg",
             "file_size": 1024,
             "status": "completed",
-            "upload_timestamp": datetime.now(timezone.utc),
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
+            "upload_timestamp": datetime.now(UTC),
+            "created_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
         }
         image = ImageInDB(**data)
         assert image.filename == "test.jpg"
@@ -175,9 +185,7 @@ class TestPaginatedResponse:
 
     def test_paginated_response_last_page(self):
         """Test last page has no next."""
-        response = PaginatedResponse[int](
-            items=[10], total=10, page=4, page_size=3
-        )
+        response = PaginatedResponse[int](items=[10], total=10, page=4, page_size=3)
         assert response.has_next is False
         assert response.has_previous is True
 
@@ -191,9 +199,7 @@ class TestPaginatedResponse:
 
     def test_paginated_response_empty(self):
         """Test pagination with no items."""
-        response = PaginatedResponse[int](
-            items=[], total=0, page=1, page_size=10
-        )
+        response = PaginatedResponse[int](items=[], total=0, page=1, page_size=10)
         assert response.pages == 0
         assert response.has_next is False
         assert response.has_previous is False

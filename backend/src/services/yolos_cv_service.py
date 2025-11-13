@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from time import perf_counter
-from typing import Any, Dict, List
+from typing import Any
 
 from PIL import Image
 
@@ -27,7 +27,9 @@ class YOLOSCVService(CVServiceInterface):
         settings = get_settings()
         self._model_loader = model_loader or ModelLoader()
         self._confidence_threshold = (
-            confidence_threshold if confidence_threshold is not None else settings.CONFIDENCE_THRESHOLD
+            confidence_threshold
+            if confidence_threshold is not None
+            else settings.CONFIDENCE_THRESHOLD
         )
         self._model_name = settings.MODEL_NAME
 
@@ -41,10 +43,12 @@ class YOLOSCVService(CVServiceInterface):
 
         try:
             self._model_loader.warmup()
-        except Exception as exc:  # pragma: no cover - warmup failures should not break startup
+        except (
+            Exception
+        ) as exc:  # pragma: no cover - warmup failures should not break startup
             logger.warning("Model warmup failed: %s", exc)
 
-    def detect_objects(self, image: Image.Image) -> List[Dict[str, Any]]:
+    def detect_objects(self, image: Image.Image) -> list[dict[str, Any]]:
         """Run object detection on the provided image."""
         if image.mode != "RGB":
             image = image.convert("RGB")
@@ -60,7 +64,7 @@ class YOLOSCVService(CVServiceInterface):
             inference_time,
         )
 
-        detections: List[Dict[str, Any]] = []
+        detections: list[dict[str, Any]] = []
         for item in raw_results:
             score = float(item.get("score") or item.get("confidence", 0.0))
             if score < self._confidence_threshold:
@@ -74,8 +78,12 @@ class YOLOSCVService(CVServiceInterface):
                     "bbox": {
                         "xmin": int(round(box.get("xmin", box.get("x", 0)))),
                         "ymin": int(round(box.get("ymin", box.get("y", 0)))),
-                        "xmax": int(round(box.get("xmax", box.get("x", 0) + box.get("w", 0)))),
-                        "ymax": int(round(box.get("ymax", box.get("y", 0) + box.get("h", 0)))),
+                        "xmax": int(
+                            round(box.get("xmax", box.get("x", 0) + box.get("w", 0)))
+                        ),
+                        "ymax": int(
+                            round(box.get("ymax", box.get("y", 0) + box.get("h", 0)))
+                        ),
                     },
                 }
             )

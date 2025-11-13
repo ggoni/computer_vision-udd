@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import delete, func, select
@@ -17,7 +17,7 @@ class DetectionRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create_many(self, detections: List[Dict[str, Any]]) -> List[Detection]:
+    async def create_many(self, detections: list[dict[str, Any]]) -> list[Detection]:
         """Bulk insert multiple detections and return created instances."""
         if not detections:
             return []
@@ -30,7 +30,7 @@ class DetectionRepository:
             await self._session.refresh(obj)
         return objects
 
-    async def get_by_image_id(self, image_id: UUID) -> List[Detection]:
+    async def get_by_image_id(self, image_id: UUID) -> list[Detection]:
         """Return detections for an image ordered by confidence desc."""
         stmt = (
             select(Detection)
@@ -45,9 +45,9 @@ class DetectionRepository:
         *,
         page: int,
         page_size: int,
-        label: Optional[str] = None,
-        min_confidence: Optional[float] = None,
-    ) -> Tuple[List[Detection], int]:
+        label: str | None = None,
+        min_confidence: float | None = None,
+    ) -> tuple[list[Detection], int]:
         """Return (items, total_count) with optional filters.
 
         Items ordered by confidence desc, then created_at desc.
@@ -73,7 +73,9 @@ class DetectionRepository:
 
         # page items
         stmt = (
-            base.order_by(Detection.confidence_score.desc(), Detection.created_at.desc())
+            base.order_by(
+                Detection.confidence_score.desc(), Detection.created_at.desc()
+            )
             .offset((page - 1) * page_size)
             .limit(page_size)
         )

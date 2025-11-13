@@ -9,14 +9,15 @@ from PIL import Image
 
 from src.utils.image_processing import (
     MIN_IMAGE_SIZE,
-    MAX_IMAGE_SIZE,
+    image_to_bytes,
     preprocess_image,
     resize_image,
-    image_to_bytes,
 )
 
 
-def create_test_image(width: int, height: int, mode: str = "RGB", color: str = "white") -> Image.Image:
+def create_test_image(
+    width: int, height: int, mode: str = "RGB", color: str = "white"
+) -> Image.Image:
     """Create an in-memory test image."""
     image = Image.new(mode, (width, height), color=color)
     return image

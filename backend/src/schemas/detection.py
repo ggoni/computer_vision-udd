@@ -2,9 +2,8 @@
 
 from datetime import datetime
 from uuid import UUID
-from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class BoundingBox(BaseModel):

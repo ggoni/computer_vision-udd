@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 
 from src.models.image import Image
 from src.services.image_repository import ImageRepositoryInterface
@@ -35,7 +34,7 @@ class ImageRepository(ImageRepositoryInterface):
         await self._session.refresh(image)
         return image
 
-    async def get_by_id(self, image_id: UUID) -> Optional[Image]:
+    async def get_by_id(self, image_id: UUID) -> Image | None:
         stmt = select(Image).where(Image.id == image_id)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
@@ -68,9 +67,9 @@ class ImageRepository(ImageRepositoryInterface):
         *,
         page: int,
         page_size: int,
-        status: Optional[str] = None,
-        filename_substr: Optional[str] = None,
-    ) -> Tuple[List[Image], int]:
+        status: str | None = None,
+        filename_substr: str | None = None,
+    ) -> tuple[list[Image], int]:
         """Return a page of images and total count with optional filters.
 
         Ordered by upload timestamp desc, then created_at desc.

@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Optional
-from uuid import UUID
 from pathlib import Path
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db.session import get_db
-from ...schemas.image import ImageResponse
 from ...schemas.common import PaginatedResponse
+from ...schemas.image import ImageResponse
 from ...services import ImageRepository, ImageService
 from ...utils import FileStorage
 from ..dependencies import validate_uploaded_image
-
 
 router = APIRouter(prefix="/api/v1/images", tags=["images"])
 
@@ -27,10 +25,12 @@ async def get_image_service(db: AsyncSession = Depends(get_db)) -> ImageService:
     return ImageService(repository=repo, storage=storage)
 
 
-@router.post("/upload", response_model=ImageResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload", response_model=ImageResponse, status_code=status.HTTP_201_CREATED
+)
 async def upload_image(
     file: UploadFile = Depends(validate_uploaded_image),
-    original_url: Optional[str] = None,
+    original_url: str | None = None,
     service: ImageService = Depends(get_image_service),
 ):
     """Upload an image file and persist metadata."""
@@ -46,7 +46,9 @@ async def upload_image(
         detail = str(e)
         if "already exists" in detail.lower():
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=detail)
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=detail
+        )
 
 
 @router.get("/{image_id}", response_model=ImageResponse)
@@ -54,7 +56,9 @@ async def get_image(image_id: UUID, service: ImageService = Depends(get_image_se
     """Retrieve image metadata by ID."""
     image = await service.get_image(image_id)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+        )
     return image
 
 
@@ -62,8 +66,8 @@ async def get_image(image_id: UUID, service: ImageService = Depends(get_image_se
 async def list_images(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    status: Optional[str] = Query(None),
-    filename_substr: Optional[str] = Query(None, min_length=1),
+    status: str | None = Query(None),
+    filename_substr: str | None = Query(None, min_length=1),
     service: ImageService = Depends(get_image_service),
 ):
     """List images with pagination and optional filters."""
@@ -94,16 +98,22 @@ def _infer_media_type(path: Path) -> str:
 
 
 @router.get("/{image_id}/file")
-async def download_image_file(image_id: UUID, service: ImageService = Depends(get_image_service)):
+async def download_image_file(
+    image_id: UUID, service: ImageService = Depends(get_image_service)
+):
     """Download the original stored image file."""
     image = await service.get_image(image_id)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+        )
 
     storage = FileStorage()
     file_path = storage.get_file_path(image.storage_path)
     if not file_path.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="File missing"
+        )
 
     return FileResponse(
         path=str(file_path),
@@ -113,9 +123,13 @@ async def download_image_file(image_id: UUID, service: ImageService = Depends(ge
 
 
 @router.delete("/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_image(image_id: UUID, service: ImageService = Depends(get_image_service)):
+async def delete_image(
+    image_id: UUID, service: ImageService = Depends(get_image_service)
+):
     """Delete image and its file."""
     ok = await service.delete_image(image_id)
     if not ok:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+        )
     return None

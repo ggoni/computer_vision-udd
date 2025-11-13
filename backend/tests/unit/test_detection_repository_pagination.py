@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import pytest
-from datetime import datetime, timezone
-from uuid import uuid4
+from datetime import UTC, datetime
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+import pytest
 
 from src.db.session import get_session_local
-from src.models.image import Image
 from src.models.detection import Detection
+from src.models.image import Image
 from src.services.detection_repository import DetectionRepository
 
 
@@ -36,7 +33,7 @@ async def test_pagination_with_filters():
             storage_path="2025/11/12/repo_test.jpg",
             file_size=100,
             status="completed",
-            upload_timestamp=datetime.now(timezone.utc),
+            upload_timestamp=datetime.now(UTC),
         )
         session.add(image)
         await session.flush()
@@ -76,16 +73,22 @@ async def test_pagination_with_filters():
         repo = DetectionRepository(session)
 
         # Filter by label
-        cat_items, cat_total = await repo.get_paginated(page=1, page_size=10, label="cat")
+        cat_items, cat_total = await repo.get_paginated(
+            page=1, page_size=10, label="cat"
+        )
         assert cat_total == 2
         assert all(d.label == "cat" for d in cat_items)
 
         # Filter by min_confidence
-        conf_items, conf_total = await repo.get_paginated(page=1, page_size=10, min_confidence=0.6)
+        conf_items, conf_total = await repo.get_paginated(
+            page=1, page_size=10, min_confidence=0.6
+        )
         assert conf_total == 1
         assert all(d.confidence_score >= 0.6 for d in conf_items)
 
         # Combined filter
-        combo_items, combo_total = await repo.get_paginated(page=1, page_size=10, label="cat", min_confidence=0.8)
+        combo_items, combo_total = await repo.get_paginated(
+            page=1, page_size=10, label="cat", min_confidence=0.8
+        )
         assert combo_total == 1
         assert combo_items[0].label == "cat" and combo_items[0].confidence_score >= 0.8

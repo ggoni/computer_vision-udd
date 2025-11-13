@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from PIL import Image
@@ -11,8 +10,8 @@ from PIL import Image
 from src.schemas.common import PaginatedResponse
 from src.schemas.detection import DetectionResponse
 from src.services.cv_service_interface import CVServiceInterface
-from src.services.image_repository_impl import ImageRepository
 from src.services.detection_repository import DetectionRepository
+from src.services.image_repository_impl import ImageRepository
 from src.utils import FileStorage, preprocess_image
 
 logger = logging.getLogger(__name__)
@@ -27,14 +26,14 @@ class DetectionService:
         detection_repo: DetectionRepository,
         cv_service: CVServiceInterface,
         image_repo: ImageRepository,
-        storage: Optional[FileStorage] = None,
+        storage: FileStorage | None = None,
     ) -> None:
         self._det_repo = detection_repo
         self._cv = cv_service
         self._img_repo = image_repo
         self._storage = storage or FileStorage()
 
-    async def analyze_image(self, image_id: UUID) -> List[DetectionResponse]:
+    async def analyze_image(self, image_id: UUID) -> list[DetectionResponse]:
         """Run CV analysis for an image and persist detections.
 
         Returns list of DetectionResponse.
@@ -59,7 +58,9 @@ class DetectionService:
                 {
                     "image_id": image.id,
                     "label": d.get("label", "unknown"),
-                    "confidence_score": float(d.get("confidence_score", d.get("score", 0.0))),
+                    "confidence_score": float(
+                        d.get("confidence_score", d.get("score", 0.0))
+                    ),
                     "bbox_xmin": int(bbox.get("xmin", 0)),
                     "bbox_ymin": int(bbox.get("ymin", 0)),
                     "bbox_xmax": int(bbox.get("xmax", 0)),
@@ -74,7 +75,7 @@ class DetectionService:
 
         return [DetectionResponse.model_validate(x) for x in created]
 
-    async def get_detections(self, image_id: UUID) -> List[DetectionResponse]:
+    async def get_detections(self, image_id: UUID) -> list[DetectionResponse]:
         rows = await self._det_repo.get_by_image_id(image_id)
         return [DetectionResponse.model_validate(x) for x in rows]
 
@@ -83,8 +84,8 @@ class DetectionService:
         *,
         page: int,
         page_size: int,
-        label: Optional[str] = None,
-        min_confidence: Optional[float] = None,
+        label: str | None = None,
+        min_confidence: float | None = None,
     ) -> PaginatedResponse[DetectionResponse]:
         items, total = await self._det_repo.get_paginated(
             page=page, page_size=page_size, label=label, min_confidence=min_confidence

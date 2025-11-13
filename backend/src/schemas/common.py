@@ -1,10 +1,9 @@
 """Common Pydantic schemas."""
 
-from typing import Generic, TypeVar, List
 from math import ceil
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field, computed_field
-
 
 T = TypeVar("T")
 
@@ -12,7 +11,7 @@ T = TypeVar("T")
 class PaginatedResponse(BaseModel, Generic[T]):
     """Generic paginated response schema."""
 
-    items: List[T] = Field(..., description="List of items for current page")
+    items: list[T] = Field(..., description="List of items for current page")
     total: int = Field(..., ge=0, description="Total number of items")
     page: int = Field(..., ge=1, description="Current page number (1-indexed)")
     page_size: int = Field(..., ge=1, description="Number of items per page")

@@ -5,11 +5,10 @@ from __future__ import annotations
 from io import BytesIO
 from uuid import uuid4
 
-from PIL import Image
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from src.main import app
-
 
 client = TestClient(app)
 

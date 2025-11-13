@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from uuid import UUID
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -11,7 +10,7 @@ class ImageBase(BaseModel):
     """Base schema for Image with shared attributes."""
 
     filename: str = Field(..., min_length=1, max_length=255)
-    original_url: Optional[str] = Field(None, max_length=2048)
+    original_url: str | None = Field(None, max_length=2048)
 
     @field_validator("filename")
     @classmethod
@@ -19,7 +18,7 @@ class ImageBase(BaseModel):
         """Validate filename to prevent path traversal attacks."""
         if not v:
             raise ValueError("Filename cannot be empty")
-        
+
         # Check for path traversal patterns
         dangerous_patterns = ["..", "/", "\\", "\0"]
         for pattern in dangerous_patterns:
@@ -27,7 +26,7 @@ class ImageBase(BaseModel):
                 raise ValueError(
                     f"Filename contains invalid character or pattern: {pattern}"
                 )
-        
+
         return v
 
 
@@ -40,20 +39,20 @@ class ImageCreate(ImageBase):
 class ImageUpdate(BaseModel):
     """Schema for updating an existing Image."""
 
-    filename: Optional[str] = Field(None, min_length=1, max_length=255)
-    original_url: Optional[str] = Field(None, max_length=2048)
-    status: Optional[str] = Field(None, max_length=50)
+    filename: str | None = Field(None, min_length=1, max_length=255)
+    original_url: str | None = Field(None, max_length=2048)
+    status: str | None = Field(None, max_length=50)
 
     @field_validator("filename")
     @classmethod
-    def validate_filename(cls, v: Optional[str]) -> Optional[str]:
+    def validate_filename(cls, v: str | None) -> str | None:
         """Validate filename to prevent path traversal attacks."""
         if v is None:
             return v
-        
+
         if not v:
             raise ValueError("Filename cannot be empty")
-        
+
         # Check for path traversal patterns
         dangerous_patterns = ["..", "/", "\\", "\0"]
         for pattern in dangerous_patterns:
@@ -61,7 +60,7 @@ class ImageUpdate(BaseModel):
                 raise ValueError(
                     f"Filename contains invalid character or pattern: {pattern}"
                 )
-        
+
         return v
 
 

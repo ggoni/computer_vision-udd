@@ -1,12 +1,11 @@
 """Unit tests for file utilities."""
 
-import pytest
 from src.utils.file_utils import (
     ALLOWED_EXTENSIONS,
+    get_file_hash,
+    sanitize_filename,
     validate_file_extension,
     validate_file_size,
-    sanitize_filename,
-    get_file_hash,
 )
 
 

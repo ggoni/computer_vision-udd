@@ -4,13 +4,11 @@ import logging
 import time
 from typing import Any, Optional
 
-from transformers import pipeline
 import torch
 from PIL import Image
-import io
+from transformers import pipeline
 
 from ..core.config import get_settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -18,19 +16,19 @@ logger = logging.getLogger(__name__)
 class ModelLoader:
     """
     Singleton class for loading and caching ML models.
-    
+
     Ensures model is loaded only once and reused across requests.
     Uses Hugging Face Transformers pipeline for object detection.
     """
 
     _instance: Optional["ModelLoader"] = None
-    _model: Optional[Any] = None
+    _model: Any | None = None
     _model_loaded: bool = False
 
     def __new__(cls) -> "ModelLoader":
         """
         Implement singleton pattern.
-        
+
         Returns:
             Single instance of ModelLoader
         """
@@ -42,10 +40,10 @@ class ModelLoader:
     def load_model(self) -> None:
         """
         Load the object detection model from Hugging Face.
-        
+
         Downloads model if needed and caches it locally.
         Only loads once - subsequent calls return immediately.
-        
+
         Raises:
             RuntimeError: If model fails to load
         """
@@ -73,10 +71,9 @@ class ModelLoader:
 
             load_time = time.time() - start_time
             self._model_loaded = True
-            
+
             logger.info(
-                f"Model loaded successfully in {load_time:.2f}s "
-                f"(device: {device_name})"
+                f"Model loaded successfully in {load_time:.2f}s (device: {device_name})"
             )
 
         except Exception as e:
@@ -88,27 +85,27 @@ class ModelLoader:
     def get_model(self) -> Any:
         """
         Get the loaded model instance.
-        
+
         Loads model if not already loaded.
-        
+
         Returns:
             Hugging Face pipeline object for object detection
-            
+
         Raises:
             RuntimeError: If model fails to load
         """
         if not self._model_loaded:
             self.load_model()
-        
+
         if self._model is None:
             raise RuntimeError("Model failed to load")
-        
+
         return self._model
 
     def warmup(self) -> None:
         """
         Warm up model by running dummy inference.
-        
+
         Helps reduce latency on first real request by pre-loading
         model weights into memory and initializing inference pipeline.
         """
@@ -118,11 +115,11 @@ class ModelLoader:
 
             # Create a small dummy RGB image (100x100 pixels, white)
             dummy_image = Image.new("RGB", (100, 100), color="white")
-            
+
             # Run inference
             model = self.get_model()
             _ = model(dummy_image)
-            
+
             warmup_time = time.time() - start_time
             logger.info(f"Model warmup completed in {warmup_time:.2f}s")
 
@@ -133,7 +130,7 @@ class ModelLoader:
     def is_loaded(self) -> bool:
         """
         Check if model is currently loaded.
-        
+
         Returns:
             True if model is loaded and ready, False otherwise
         """
@@ -142,7 +139,7 @@ class ModelLoader:
     def unload_model(self) -> None:
         """
         Unload model from memory.
-        
+
         Useful for testing or freeing memory.
         In production, model should stay loaded.
         """
@@ -150,7 +147,7 @@ class ModelLoader:
             logger.info("Unloading model from memory")
             self._model = None
             self._model_loaded = False
-            
+
             # Force garbage collection to free memory
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()

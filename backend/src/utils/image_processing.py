@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Tuple
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
@@ -11,15 +10,15 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 SUPPORTED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
 
 # Minimum and maximum allowed dimensions (width, height)
-MIN_IMAGE_SIZE: Tuple[int, int] = (32, 32)
-MAX_IMAGE_SIZE: Tuple[int, int] = (8192, 8192)
+MIN_IMAGE_SIZE: tuple[int, int] = (32, 32)
+MAX_IMAGE_SIZE: tuple[int, int] = (8192, 8192)
 
 
 def preprocess_image(
     image_bytes: bytes,
     *,
-    min_size: Tuple[int, int] | None = None,
-    max_size: Tuple[int, int] | None = None,
+    min_size: tuple[int, int] | None = None,
+    max_size: tuple[int, int] | None = None,
 ) -> Image.Image:
     """Load and validate an image from raw bytes, returning an RGB PIL image.
 
@@ -46,7 +45,10 @@ def preprocess_image(
             img.load()
             image_format = (img.format or "").upper()
             image = img.convert("RGBA") if img.mode in {"P", "LA"} else img.copy()
-    except (UnidentifiedImageError, OSError) as exc:  # pragma: no cover - PIL exceptions
+    except (
+        UnidentifiedImageError,
+        OSError,
+    ) as exc:  # pragma: no cover - PIL exceptions
         raise ValueError("Provided file is not a valid image") from exc
 
     if image_format and image_format not in SUPPORTED_IMAGE_FORMATS:
@@ -71,7 +73,7 @@ def preprocess_image(
 
 def resize_image(
     image: Image.Image,
-    max_size: Tuple[int, int],
+    max_size: tuple[int, int],
     *,
     resample: Image.Resampling = Image.Resampling.LANCZOS,
 ) -> Image.Image:

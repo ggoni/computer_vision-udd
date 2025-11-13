@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 from PIL import Image
 
@@ -16,5 +16,5 @@ class CVServiceInterface(ABC):
         """Load and prepare the underlying ML model for inference."""
 
     @abstractmethod
-    def detect_objects(self, image: Image.Image) -> List[Dict[str, Any]]:
+    def detect_objects(self, image: Image.Image) -> list[dict[str, Any]]:
         """Run object detection on a PIL image and return formatted results."""

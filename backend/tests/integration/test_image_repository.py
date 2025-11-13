@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from uuid import uuid4
+
 import pytest
 import pytest_asyncio
-from uuid import uuid4
-from datetime import datetime, timezone
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.services.image_repository_impl import ImageRepository
-from src.models.image import Image
 from src.db.session import get_session_local
+from src.models.image import Image
+from src.services.image_repository_impl import ImageRepository
 
 
 @pytest_asyncio.fixture
@@ -30,7 +30,7 @@ async def test_create_image(db_session: AsyncSession):
         "storage_path": "uploads/test.jpg",
         "file_size": 1024,
         "status": "pending",
-    "upload_timestamp": datetime.now(timezone.utc),
+        "upload_timestamp": datetime.now(UTC),
     }
 
     image = await repo.create(image_data)
@@ -57,7 +57,7 @@ async def test_update_status(db_session: AsyncSession):
         "storage_path": "uploads/status.jpg",
         "file_size": 2048,
         "status": "pending",
-    "upload_timestamp": datetime.now(timezone.utc),
+        "upload_timestamp": datetime.now(UTC),
     }
     image = await repo.create(image_data)
 
@@ -74,7 +74,7 @@ async def test_delete_image(db_session: AsyncSession):
         "storage_path": "uploads/delete.jpg",
         "file_size": 512,
         "status": "pending",
-    "upload_timestamp": datetime.now(timezone.utc),
+        "upload_timestamp": datetime.now(UTC),
     }
     image = await repo.create(image_data)
 

@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -50,25 +50,25 @@ class TimestampMixin:
 
 class BaseModel(Base, UUIDMixin, TimestampMixin):
     """Base model class with UUID and timestamp mixins.
-    
+
     This class combines the declarative base with common mixins
     that most models in the application will need.
     """
-    
+
     __abstract__ = True
-    
+
     def __repr__(self) -> str:
         """Return string representation of the model."""
         attrs = []
         for key, value in self.__dict__.items():
-            if not key.startswith('_'):
+            if not key.startswith("_"):
                 attrs.append(f"{key}={value!r}")
-        
+
         return f"<{self.__class__.__name__}({', '.join(attrs)})>"
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert model instance to dictionary.
-        
+
         Returns:
             Dictionary representation of the model
         """
@@ -82,5 +82,5 @@ class BaseModel(Base, UUIDMixin, TimestampMixin):
             elif isinstance(value, uuid.UUID):
                 value = str(value)
             result[column.name] = value
-        
+
         return result

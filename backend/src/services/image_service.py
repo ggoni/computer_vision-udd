@@ -7,14 +7,12 @@ validation, persistence to storage, and database record management.
 from __future__ import annotations
 
 import logging
-from typing import Optional, List
 from uuid import UUID
 
+from ..core.config import get_settings
 from ..schemas.image import ImageInDB
 from ..utils import FileStorage, validate_file_extension, validate_file_size
-from ..core.config import get_settings
 from .image_repository import ImageRepositoryInterface
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ class ImageService:
     def __init__(
         self,
         repository: ImageRepositoryInterface,
-        storage: Optional[FileStorage] = None,
+        storage: FileStorage | None = None,
     ) -> None:
         self._repo = repository
         self._storage = storage or FileStorage()
@@ -36,7 +34,7 @@ class ImageService:
         *,
         file_bytes: bytes,
         filename: str,
-        original_url: Optional[str] = None,
+        original_url: str | None = None,
     ) -> ImageInDB:
         """Validate and persist an uploaded image.
 
@@ -82,7 +80,7 @@ class ImageService:
         # Map to schema
         return ImageInDB.model_validate(image)
 
-    async def get_image(self, image_id: UUID) -> Optional[ImageInDB]:
+    async def get_image(self, image_id: UUID) -> ImageInDB | None:
         """Retrieve an image by id and map to schema."""
         image = await self._repo.get_by_id(image_id)
         if image is None:
@@ -116,9 +114,9 @@ class ImageService:
         *,
         page: int,
         page_size: int,
-        status: Optional[str] = None,
-        filename_substr: Optional[str] = None,
-    ) -> tuple[List[ImageInDB], int]:
+        status: str | None = None,
+        filename_substr: str | None = None,
+    ) -> tuple[list[ImageInDB], int]:
         """Return paginated images mapped to schemas with total count.
 
         Applies optional filters and delegates to repository.

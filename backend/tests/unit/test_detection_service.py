@@ -1,8 +1,9 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock
+from uuid import uuid4
+
 import pytest
 import pytest_asyncio
-from datetime import datetime, timezone
-from uuid import uuid4
-from unittest.mock import AsyncMock, Mock
 from PIL import Image
 
 from src.services.detection_service import DetectionService
@@ -17,8 +18,16 @@ class DummyImage:
 async def mock_cv():
     cv = Mock()
     cv.detect_objects.return_value = [
-        {"label": "cat", "confidence_score": 0.95, "bbox": {"xmin": 1, "ymin": 2, "xmax": 10, "ymax": 12}},
-        {"label": "dog", "confidence_score": 0.5, "bbox": {"xmin": 3, "ymin": 4, "xmax": 8, "ymax": 9}},
+        {
+            "label": "cat",
+            "confidence_score": 0.95,
+            "bbox": {"xmin": 1, "ymin": 2, "xmax": 10, "ymax": 12},
+        },
+        {
+            "label": "dog",
+            "confidence_score": 0.5,
+            "bbox": {"xmin": 3, "ymin": 4, "xmax": 8, "ymax": 9},
+        },
     ]
     return cv
 
@@ -50,7 +59,9 @@ async def storage_and_tmpfile(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_analyze_image_orchestrates_workflow(mock_cv, mock_repos, storage_and_tmpfile, monkeypatch):
+async def test_analyze_image_orchestrates_workflow(
+    mock_cv, mock_repos, storage_and_tmpfile, monkeypatch
+):
     det_repo, img_repo = mock_repos
 
     image_id = uuid4()
@@ -61,7 +72,12 @@ async def test_analyze_image_orchestrates_workflow(mock_cv, mock_repos, storage_
 
     # Bypass preprocess_image by using the actual file and a simple identity
     from src.services import detection_service as ds_mod
-    monkeypatch.setattr(ds_mod, "preprocess_image", lambda b: Image.open(storage_and_tmpfile.get_file_path("")))
+
+    monkeypatch.setattr(
+        ds_mod,
+        "preprocess_image",
+        lambda b: Image.open(storage_and_tmpfile.get_file_path("")),
+    )
 
     det_repo.create_many.return_value = [
         DummyImage(
@@ -73,8 +89,8 @@ async def test_analyze_image_orchestrates_workflow(mock_cv, mock_repos, storage_
             bbox_ymin=2,
             bbox_xmax=10,
             bbox_ymax=12,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
     ]
 
@@ -106,8 +122,8 @@ async def test_get_detections_returns_mapped(mock_cv, mock_repos):
             bbox_ymin=0,
             bbox_xmax=1,
             bbox_ymax=1,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
     ]
 
@@ -135,8 +151,8 @@ async def test_get_all_paginated_wraps_response(mock_cv, mock_repos):
             bbox_ymin=0,
             bbox_xmax=1,
             bbox_ymax=1,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
     ]
     det_repo.get_paginated.return_value = (items, 1)

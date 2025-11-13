@@ -1,6 +1,5 @@
 """Tests for core configuration module."""
 
-import pytest
 from src.core.config import Settings, get_settings
 
 
@@ -32,6 +31,6 @@ def test_production_mode_detection():
     """Test production mode detection."""
     settings = Settings(APP_ENV="development")
     assert not settings.is_production
-    
+
     settings_prod = Settings(APP_ENV="production", SECRET_KEY="test-key")
     assert settings_prod.is_production

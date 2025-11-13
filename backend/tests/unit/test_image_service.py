@@ -1,11 +1,12 @@
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock
+from uuid import uuid4
+
 import pytest
 import pytest_asyncio
-from datetime import datetime, timezone
-from uuid import uuid4
-from unittest.mock import Mock, ANY, AsyncMock
 
-from src.services.image_service import ImageService
 from src.schemas.image import ImageInDB
+from src.services.image_service import ImageService
 
 
 class DummyImage:
@@ -51,9 +52,9 @@ async def test_save_uploaded_image_persists_storage_and_repo(mock_repo, mock_sto
         storage_path="2025/11/12/abcd_photo.jpg",
         file_size=4,
         status="pending",
-        upload_timestamp=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        upload_timestamp=datetime.now(UTC),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     mock_repo.create.return_value = dummy
 
@@ -83,9 +84,9 @@ async def test_get_image_passthrough(mock_repo, mock_storage):
         storage_path="p",
         file_size=1,
         status="pending",
-        upload_timestamp=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        upload_timestamp=datetime.now(UTC),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
     result = await service.get_image(image_id)
@@ -106,9 +107,9 @@ async def test_delete_image_removes_storage_then_repo(mock_repo, mock_storage):
         storage_path="2025/11/12/abcd_x.jpg",
         file_size=1,
         status="pending",
-        upload_timestamp=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        upload_timestamp=datetime.now(UTC),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     mock_repo.delete.return_value = True
 

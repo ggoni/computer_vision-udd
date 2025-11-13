@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from io import BytesIO
-from uuid import uuid4
 
-from PIL import Image
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from src.main import app
 
@@ -62,7 +61,9 @@ def test_image_list_filename_filter():
     resp = client.get("/api/v1/images?page=1&page_size=10&filename_substr=alpha")
     assert resp.status_code == 200
     body = resp.json()
-    assert all("alpha" in item["filename"] for item in body["items"]) or body["total"] == 0
+    assert (
+        all("alpha" in item["filename"] for item in body["items"]) or body["total"] == 0
+    )
 
 
 def test_image_list_status_filter_completed():
@@ -72,7 +73,11 @@ def test_image_list_status_filter_completed():
     # Run detection analyze to mark completed
     analyze_resp = client.post(f"/api/v1/images/{img_id}/analyze")
     # If detection service real model heavy, may still succeed; ignore contents
-    assert analyze_resp.status_code in (200, 201, 404)  # 404 acceptable if model not loaded
+    assert analyze_resp.status_code in (
+        200,
+        201,
+        404,
+    )  # 404 acceptable if model not loaded
 
     resp = client.get("/api/v1/images?page=1&page_size=10&status=completed")
     assert resp.status_code == 200

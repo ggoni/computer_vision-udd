@@ -6,14 +6,16 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from src.main import app
 from src.api.routes.images import get_image_service  # type: ignore
+from src.main import app
 
 client = TestClient(app)
 
 
 class FakeImageServiceDuplicate:
-    async def save_uploaded_image(self, *, file_bytes: bytes, filename: str, original_url: str | None = None):  # type: ignore[override]
+    async def save_uploaded_image(
+        self, *, file_bytes: bytes, filename: str, original_url: str | None = None
+    ):  # type: ignore[override]
         raise ValueError("Image with the same attributes already exists")
 
     async def get_image(self, image_id):  # pragma: no cover - not used here

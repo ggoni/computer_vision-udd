@@ -1,6 +1,6 @@
 """Pydantic schemas for API requests and responses."""
 
-from .image import ImageBase, ImageCreate, ImageUpdate, ImageInDB, ImageResponse
+from .common import PaginatedResponse
 from .detection import (
     BoundingBox,
     DetectionBase,
@@ -9,7 +9,7 @@ from .detection import (
     DetectionResponse,
     DetectionWithBBox,
 )
-from .common import PaginatedResponse
+from .image import ImageBase, ImageCreate, ImageInDB, ImageResponse, ImageUpdate
 
 __all__ = [
     # Image schemas

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 from uuid import UUID
 
 from src.models.image import Image
@@ -17,7 +16,7 @@ class ImageRepositoryInterface(ABC):
         """Persist a new image record and return the created ORM instance."""
 
     @abstractmethod
-    async def get_by_id(self, image_id: UUID) -> Optional[Image]:
+    async def get_by_id(self, image_id: UUID) -> Image | None:
         """Retrieve an image by its identifier, returning ``None`` when missing."""
 
     @abstractmethod

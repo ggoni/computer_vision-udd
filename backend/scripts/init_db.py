@@ -2,11 +2,12 @@
 
 Creates all tables defined in SQLAlchemy models using the async engine.
 """
+
 import asyncio
 
-from src.db.session import get_engine
-from src.db.base import Base
 import src.models  # noqa: F401 ensure model registration
+from src.db.base import Base
+from src.db.session import get_engine
 
 
 async def main():

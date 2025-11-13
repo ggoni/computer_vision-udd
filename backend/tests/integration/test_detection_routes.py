@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from typing import List
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
 from src.main import app
-from src.services.detection_service import DetectionService
 from src.schemas.detection import DetectionResponse
+from src.services.detection_service import DetectionService
 
 
 class FakeDetectionService(DetectionService):  # type: ignore[misc]
@@ -27,26 +26,36 @@ class FakeDetectionService(DetectionService):  # type: ignore[misc]
                 bbox_ymin=20,
                 bbox_xmax=100,
                 bbox_ymax=150,
-                created_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
-                updated_at=__import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+                created_at=__import__("datetime").datetime.now(
+                    __import__("datetime").timezone.utc
+                ),
+                updated_at=__import__("datetime").datetime.now(
+                    __import__("datetime").timezone.utc
+                ),
             )
         ]
 
     async def get_detections(self, image_id):  # type: ignore[override]
         return await self.analyze_image(image_id)
 
-    async def get_all_paginated(self, *, page: int, page_size: int, label=None, min_confidence=None):  # type: ignore[override]
+    async def get_all_paginated(
+        self, *, page: int, page_size: int, label=None, min_confidence=None
+    ):  # type: ignore[override]
         items = await self.analyze_image(uuid4())
         from src.schemas.common import PaginatedResponse
-        return PaginatedResponse[DetectionResponse](items=items, total=1, page=1, page_size=page_size)
+
+        return PaginatedResponse[DetectionResponse](
+            items=items, total=1, page=1, page_size=page_size
+        )
 
 
 client = TestClient(app)
 
 # Override dependency with fixture to ensure cleanup
+import pytest
+
 from src.api.routes.detection import get_detection_service  # type: ignore
 
-import pytest
 
 @pytest.fixture(autouse=True)
 def _override_detection_service():
@@ -59,7 +68,9 @@ def _override_detection_service():
 
 def test_analyze_image_and_list_detections(monkeypatch):
     # First, upload an image to obtain ID
-    img_bytes = b"fake image bytes"  # The image validation is elsewhere; minimal placeholder
+    img_bytes = (
+        b"fake image bytes"  # The image validation is elsewhere; minimal placeholder
+    )
     response = client.post(
         "/api/v1/images/upload",
         files={"file": ("sample.jpg", img_bytes, "image/jpeg")},

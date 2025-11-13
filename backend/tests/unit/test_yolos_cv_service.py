@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from unittest.mock import Mock
+
 import pytest
 from PIL import Image
-from unittest.mock import Mock
 
 from src.services.yolos_cv_service import YOLOSCVService
 
@@ -31,18 +32,20 @@ def test_load_model_invokes_loader_methods(mock_model_loader):
 
 
 def test_detect_objects_returns_formatted_results(mock_model_loader):
-    mock_model = Mock(return_value=[
-        {
-            "label": "cat",
-            "score": 0.95,
-            "box": {"xmin": 10, "ymin": 20, "xmax": 110, "ymax": 120},
-        },
-        {
-            "label": "dog",
-            "score": 0.80,
-            "box": {"xmin": 5, "ymin": 15, "xmax": 85, "ymax": 95},
-        },
-    ])
+    mock_model = Mock(
+        return_value=[
+            {
+                "label": "cat",
+                "score": 0.95,
+                "box": {"xmin": 10, "ymin": 20, "xmax": 110, "ymax": 120},
+            },
+            {
+                "label": "dog",
+                "score": 0.80,
+                "box": {"xmin": 5, "ymin": 15, "xmax": 85, "ymax": 95},
+            },
+        ]
+    )
     mock_model_loader.get_model.return_value = mock_model
 
     service = YOLOSCVService(model_loader=mock_model_loader, confidence_threshold=0.5)
@@ -58,13 +61,15 @@ def test_detect_objects_returns_formatted_results(mock_model_loader):
 
 
 def test_detect_objects_filters_by_confidence(mock_model_loader):
-    mock_model = Mock(return_value=[
-        {
-            "label": "bird",
-            "score": 0.40,
-            "box": {"xmin": 0, "ymin": 0, "xmax": 50, "ymax": 50},
-        }
-    ])
+    mock_model = Mock(
+        return_value=[
+            {
+                "label": "bird",
+                "score": 0.40,
+                "box": {"xmin": 0, "ymin": 0, "xmax": 50, "ymax": 50},
+            }
+        ]
+    )
     mock_model_loader.get_model.return_value = mock_model
 
     service = YOLOSCVService(model_loader=mock_model_loader, confidence_threshold=0.5)
