@@ -5,7 +5,7 @@ ensuring proper input sanitization and type checking.
 """
 
 from typing import Literal, Optional
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ImageListParams(BaseModel):
@@ -33,7 +33,8 @@ class ImageListParams(BaseModel):
         description="Search for files containing this substring"
     )
     
-    @validator('filename_substr')
+    @field_validator('filename_substr')
+    @classmethod
     def validate_filename_substr(cls, v):
         """Sanitize filename substring input."""
         if v is not None:
@@ -75,7 +76,8 @@ class DetectionListParams(BaseModel):
         description="Minimum confidence score (0.0-1.0)"
     )
     
-    @validator('label')
+    @field_validator('label')
+    @classmethod
     def validate_label(cls, v):
         """Sanitize label input."""
         if v is not None:
