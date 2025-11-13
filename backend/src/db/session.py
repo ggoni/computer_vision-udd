@@ -6,6 +6,7 @@ connection pooling and dependency injection for FastAPI.
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -33,8 +34,16 @@ def get_engine():
 
         engine_kwargs = {
             "pool_pre_ping": True,
-            "pool_recycle": 3600,
+            "pool_recycle": 3600,  # Recycle connections every hour
             "echo": settings.DEBUG and settings.LOG_LEVEL.upper() == "DEBUG",
+            # AsyncPG-specific optimizations
+            "connect_args": {
+                "command_timeout": 30,  # Query timeout from asyncpg docs
+                "server_settings": {
+                    "timezone": "UTC",  # Consistent timezone setting
+                    "application_name": "cv_backend",  # Connection identification
+                }
+            }
         }
 
         if settings.APP_ENV == "test":
@@ -80,7 +89,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency that provides a database session.
 
     This function is used as a FastAPI dependency to inject
-    database sessions into route handlers.
+    database sessions into route handlers with timeout handling.
 
     Yields:
         AsyncSession: Database session
@@ -96,12 +105,15 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with session_local() as session:
         try:
             logger.debug("Database session created")
+            # Set session-level timeout
+            await session.execute(text("SET statement_timeout = 30000"))  # 30 seconds
             yield session
             await session.commit()
             logger.debug("Database session committed")
         except Exception as e:
             logger.error(
-                "Database session error, rolling back", extra={"error": str(e)}
+                "Database session error, rolling back", 
+                extra={"error": str(e), "error_type": type(e).__name__}
             )
             await session.rollback()
             raise
@@ -136,10 +148,40 @@ async def check_db_connection() -> bool:
         session_local = get_session_local()
         async with session_local() as session:
             # Simple query to check connection
-            result = await session.execute("SELECT 1")
+            result = await session.execute(text("SELECT 1"))
             result.fetchone()
             logger.debug("Database health check passed")
             return True
     except Exception as e:
         logger.error("Database health check failed", extra={"error": str(e)})
         return False
+
+
+# AsyncPG-style transaction context manager following best practices
+class DatabaseQueryMonitor:
+    """Database query monitoring context manager following asyncpg patterns."""
+    
+    def __init__(self, operation_name: str):
+        self.operation_name = operation_name
+        self.start_time = None
+    
+    async def __aenter__(self):
+        import time
+        self.start_time = time.time()
+        logger.debug(f"Starting database operation: {self.operation_name}")
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        import time
+        duration = time.time() - self.start_time
+        
+        if exc_type:
+            logger.error(
+                f"Database operation failed: {self.operation_name}",
+                extra={"duration": duration, "error": str(exc_val)}
+            )
+        else:
+            logger.debug(
+                f"Database operation completed: {self.operation_name}",
+                extra={"duration": duration}
+            )
