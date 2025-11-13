@@ -14,11 +14,11 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error('No file selected');
+      if (!file) throw new Error('Ningún archivo seleccionado');
       return uploadImage(file);
     },
     onSuccess: (data) => {
-      pushToast(`Uploaded: ${data.filename}`);
+      pushToast(`Subido: ${data.filename}`);
       onUploaded(data);
       setFile(null);
     },
@@ -40,7 +40,7 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
         <button type="submit" disabled={!file || mutation.isPending}>
-          {mutation.isPending ? 'Uploading...' : 'Upload'}
+          {mutation.isPending ? 'Subiendo...' : 'Subir'}
         </button>
       </div>
       {mutation.isError && <p style={{ color: '#ef4444' }}>{(mutation.error as any)?.message}</p>}
