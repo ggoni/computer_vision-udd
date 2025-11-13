@@ -1,8 +1,12 @@
 # Computer Vision Detection API
 
-![CI](https://github.com/ggoni/computer_vision-udd/actions/workflows/ci.yml/badge.svg)
 
 FastAPI-based backend providing image upload, object detection analysis, and paginated listing of images and detections.
+
+# Use case
+
+![People detection](use-case.png)
+
 
 ## Quick Start
 
@@ -721,14 +725,14 @@ The following services are referenced in configuration but not yet deployed:
 
 ## License
 
-This project is part of the Computer Vision course at Universidad del Desarrollo (UDD).
+This project is part of the 2025 version of the Computer Vision class, in the _Inteligencia Artificial para la Transformación Empresarial_ program at Universidad del Desarrollo (UDD), Chile.
 
-**Educational Use License**: This project is intended for educational purposes. Students and educators are free to use, modify, and learn from this codebase. Commercial use requires permission from the course instructors.
+**Educational Use License**: This project is intended for **educational purposes only**. Students and educators are free to use, modify, and learn from this codebase. Commercial use requires permission from the course instructors.
 
 ## Acknowledgments
 
 - **Hugging Face**: For providing the YOLO model and transformers library
-- **FastAPI Team**: For the excellent async web framework
+- **FastAPI Team**: For the async web framework
 - **React Team**: For the component-based UI library
 - **Universidad del Desarrollo**: For supporting this educational project
 
