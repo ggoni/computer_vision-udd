@@ -34,13 +34,11 @@ class ImageService:
         original_url: str | None = None,
     ) -> ImageInDB:
         """Save uploaded image - compatibility method.
-        
+
         Maintains interface compatibility while using FastAPI patterns.
         """
-        from io import BytesIO
-        
         return await self.upload_image(
-            image_content=BytesIO(file_bytes),
+            image_content=file_bytes,
             original_filename=filename,
             content_type="application/octet-stream",
         )

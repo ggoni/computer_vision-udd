@@ -8,7 +8,7 @@ def test_settings_loads_defaults():
     settings = get_settings()
     assert settings.APP_ENV is not None
     assert settings.MAX_UPLOAD_SIZE > 0
-    assert settings.MODEL_NAME == "huggingface/yolos-tiny"
+    assert settings.MODEL_NAME == "hustvl/yolos-tiny"
     assert settings.CONFIDENCE_THRESHOLD == 0.5
 
 
