@@ -18,7 +18,7 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
       return uploadImage(file);
     },
     onSuccess: (data) => {
-      pushToast(`Uploaded: ${data.filename}`);
+      pushToast(`Subido: ${data.filename}`);
       onUploaded(data);
       setFile(null);
     },
