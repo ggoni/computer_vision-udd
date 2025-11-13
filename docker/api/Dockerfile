@@ -30,7 +30,7 @@ ENV UV_SYSTEM_PYTHON=1 \
 
 # Install dependencies with cache mount
 RUN --mount=type=cache,target=/tmp/uv-cache \
-    uv sync --frozen --no-dev --no-editable
+    uv sync --frozen --no-editable
 
 # ============================================================================
 # PRODUCTION STAGE
@@ -44,22 +44,24 @@ RUN groupadd -g 1001 appuser && \
 # Copy dependencies from previous stage
 COPY --from=dependencies /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
+COPY --from=dependencies /app/.venv /app/.venv
 
 # Set environment variables for production
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app/backend/src \
+    PYTHONPATH=/app/backend \
     TRANSFORMERS_CACHE=/app/.cache/transformers \
     TORCH_HOME=/app/.cache/torch \
-    UV_SYSTEM_PYTHON=1
+    UV_SYSTEM_PYTHON=1 \
+    UV_CACHE_DIR=/app/.cache/uv \
+    PATH="/app/.venv/bin:$PATH"
 
-# Create cache and storage directories
-RUN mkdir -p /app/.cache /app/storage /app/logs && \
-    chown -R appuser:appuser /app
+# Create cache and storage directories and home directory for appuser
+RUN mkdir -p /app/.cache /app/storage /app/logs /home/appuser && \
+    chown -R appuser:appuser /app /home/appuser
 
 # Copy application code
 COPY --chown=appuser:appuser backend/src /app/backend/src
-COPY --chown=appuser:appuser backend/alembic /app/backend/alembic
 COPY --chown=appuser:appuser backend/alembic.ini /app/backend/
 COPY --chown=appuser:appuser docker/api/entrypoint.sh /app/
 

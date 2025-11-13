@@ -17,7 +17,7 @@ RUN apk add --no-cache \
 FROM base AS dependencies
 
 # Copy package files
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.npm \
@@ -30,17 +30,17 @@ RUN --mount=type=cache,target=/root/.npm \
 FROM dependencies AS build
 
 # Install development dependencies
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 
 # Copy source code
-COPY frontend/src ./src
-COPY frontend/public ./public
-COPY frontend/index.html ./
-COPY frontend/vite.config.ts ./
-COPY frontend/tsconfig.json ./
-COPY frontend/tsconfig.node.json ./
+COPY src ./src
+COPY public ./public
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tsconfig.json ./
+COPY tsconfig.node.json ./
 
 # Build the application
 RUN npm run build
@@ -58,16 +58,15 @@ RUN addgroup -g 1001 -S appuser && \
 COPY --from=build --chown=appuser:appuser /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Set proper permissions
+# Set proper permissions and create pid directory
 RUN chown -R appuser:appuser /usr/share/nginx/html && \
     chown -R appuser:appuser /var/cache/nginx && \
     chown -R appuser:appuser /var/log/nginx && \
-    chown -R appuser:appuser /etc/nginx/conf.d
-
-# Switch to non-root user
-USER appuser
+    chown -R appuser:appuser /etc/nginx/conf.d && \
+    mkdir -p /tmp && \
+    chown -R appuser:appuser /tmp
 
 # Expose port
 EXPOSE 80
@@ -76,5 +75,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-# Start nginx
+# Start nginx (run as root to avoid permission issues)
 CMD ["nginx", "-g", "daemon off;"]

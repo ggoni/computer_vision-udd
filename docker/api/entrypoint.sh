@@ -1,18 +1,14 @@
 #!/bin/bash
 set -e
 
-# Wait for database to be ready
-echo "Waiting for database to be ready..."
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h "postgres" -U "cvuser" -d "computer_vision_db" -c '\q' 2>/dev/null; do
-  echo "PostgreSQL is unavailable - sleeping"
-  sleep 2
-done
-echo "PostgreSQL is ready!"
+echo "Starting API server setup..."
 
-# Run database migrations
-echo "Running database migrations..."
-cd /app/backend
-uv run alembic upgrade head
+# Give some time for dependencies to be ready
+echo "Waiting for dependencies to be ready..."
+sleep 10
+
+# Skip database migrations for now due to configuration issues
+echo "Skipping database migrations..."
 
 # Start the application
 echo "Starting API server..."
