@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import logging
-from uuid import UUID
-
-from PIL import Image
+from typing import TYPE_CHECKING
 
 from src.schemas.common import PaginatedResponse
 from src.schemas.detection import DetectionResponse
-from src.services.cv_service_interface import CVServiceInterface
-from src.services.detection_repository import DetectionRepository
-from src.services.image_repository_impl import ImageRepository
 from src.utils import FileStorage, preprocess_image
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from PIL import Image
+
+    from src.services.cv_service_interface import CVServiceInterface
+    from src.services.detection_repository import DetectionRepository
+    from src.services.image_repository_impl import ImageRepository
 
 logger = logging.getLogger(__name__)
 

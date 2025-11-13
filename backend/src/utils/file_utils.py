@@ -80,7 +80,6 @@ def sanitize_filename(filename: str) -> str:
 
     # Get just the filename component (remove any path)
     file_path = Path(filename)
-    name = file_path.name
 
     # Split name and extension
     stem = file_path.stem

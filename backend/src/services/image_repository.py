@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from uuid import UUID
+from typing import TYPE_CHECKING
 
-from src.models.image import Image
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from src.models.image import Image
 
 
 class ImageRepositoryInterface(ABC):

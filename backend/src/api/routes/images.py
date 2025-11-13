@@ -2,20 +2,25 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from uuid import UUID
+from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
+if TYPE_CHECKING:
+    from pathlib import Path
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from ...schemas.validation import ImageListParams
+
+from ...core.logging import get_logger
 from ...db.session import get_db
 from ...schemas.common import PaginatedResponse
 from ...schemas.image import ImageResponse
-from ...schemas.validation import ImageListParams
 from ...services import ImageRepository, ImageService
 from ...utils import FileStorage
-from ...core.logging import get_logger
 from ..dependencies import validate_uploaded_image
 
 router = APIRouter(prefix="/api/v1/images", tags=["images"])
@@ -37,11 +42,11 @@ async def upload_image(
     service: ImageService = Depends(get_image_service),
 ):
     """Upload an image file and persist metadata.
-    
+
     Following FastAPI best practices for file uploads and error handling.
     """
     content = await file.read()
-    
+
     # Service layer now handles HTTPExceptions directly
     image = await service.upload_image(
         image_content=content,
@@ -52,12 +57,12 @@ async def upload_image(
 
 
 @router.get("/{image_id}", response_model=ImageResponse)
-async def get_image(image_id: UUID, service: ImageService = Depends(get_image_service)):
+async def get_image(image_id: int, service: ImageService = Depends(get_image_service)):
     """Retrieve image metadata by ID.
 
     Following FastAPI best practices - service layer handles errors.
     """
-    # Service method handles UUID and raises HTTPExceptions
+    # Service method now handles both UUID and int, and HTTPExceptions
     image = await service.get_image(image_id)
     if image is None:
         raise HTTPException(
@@ -73,7 +78,7 @@ async def list_images(
     service: ImageService = Depends(get_image_service),
 ):
     """List images with pagination and optional filters.
-    
+
     Following FastAPI best practices - service layer handles validation and errors.
     """
     items, total = await service.get_paginated_images(

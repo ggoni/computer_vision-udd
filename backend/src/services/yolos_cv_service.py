@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import logging
 from time import perf_counter
-from typing import Any
-
-from PIL import Image
+from typing import TYPE_CHECKING, Any
 
 from src.core.config import get_settings
 from src.services.cv_service_interface import CVServiceInterface
 from src.utils import ModelLoader
 from src.utils.label_translations import translate_label
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 logger = logging.getLogger(__name__)
 

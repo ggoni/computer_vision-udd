@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import logging
-from uuid import UUID
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.image import Image
 from src.services.image_repository import ImageRepositoryInterface
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +98,7 @@ class ImageRepository(ImageRepositoryInterface):
             if filename_substr:
                 like_pattern = f"%{filename_substr}%"
                 count_stmt = count_stmt.where(Image.filename.ilike(like_pattern))
-            
+
             total = (await self._session.execute(count_stmt)).scalar_one()
 
             # Get page data with proper ordering and limits

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from uuid import UUID
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db.session import get_db
 from ...schemas.common import PaginatedResponse
@@ -43,7 +47,7 @@ async def analyze_image(
         detections = await service.analyze_image(image_id)
         return detections
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.get("/images/{image_id}/detections", response_model=list[DetectionResponse])

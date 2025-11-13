@@ -52,10 +52,9 @@ class JSONFormatter(logging.Formatter):
                 "module", "lineno", "funcName", "created", "msecs", "relativeCreated",
                 "thread", "threadName", "processName", "process", "getMessage",
                 "exc_info", "exc_text", "stack_info"
-            }:
+            } and key not in log_entry:
                 # Safely add extra fields, avoid overwriting existing keys
-                if key not in log_entry:
-                    extra_fields[key] = value
+                extra_fields[key] = value
 
         if extra_fields:
             log_entry["extra"] = extra_fields
@@ -131,10 +130,7 @@ def setup_logging() -> None:
     console_handler.setLevel(log_level)
 
     # Choose formatter based on environment
-    if settings.is_production:
-        formatter = JSONFormatter()
-    else:
-        formatter = ColoredFormatter()
+    formatter = JSONFormatter() if settings.is_production else ColoredFormatter()
 
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)

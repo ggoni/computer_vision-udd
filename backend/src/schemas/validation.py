@@ -4,13 +4,14 @@ This module provides Pydantic models for validating API requests,
 ensuring proper input sanitization and type checking.
 """
 
-from typing import Literal, Optional
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
 class ImageListParams(BaseModel):
     """Query parameters for listing images with validation."""
-    
+
     page: int = Field(
         default=1,
         ge=1,
@@ -23,16 +24,16 @@ class ImageListParams(BaseModel):
         le=100,
         description="Number of items per page (max 100)"
     )
-    status: Optional[Literal["pending", "completed", "failed"]] = Field(
+    status: Literal["pending", "completed", "failed"] | None = Field(
         default=None,
         description="Filter by image processing status"
     )
-    filename_substr: Optional[str] = Field(
+    filename_substr: str | None = Field(
         default=None,
         max_length=255,
         description="Search for files containing this substring"
     )
-    
+
     @field_validator('filename_substr')
     @classmethod
     def validate_filename_substr(cls, v):
@@ -51,7 +52,7 @@ class ImageListParams(BaseModel):
 
 class DetectionListParams(BaseModel):
     """Query parameters for listing detections with validation."""
-    
+
     page: int = Field(
         default=1,
         ge=1,
@@ -64,18 +65,18 @@ class DetectionListParams(BaseModel):
         le=100,
         description="Number of items per page (max 100)"
     )
-    label: Optional[str] = Field(
+    label: str | None = Field(
         default=None,
         max_length=100,
         description="Filter by detection label"
     )
-    min_confidence: Optional[float] = Field(
+    min_confidence: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
         description="Minimum confidence score (0.0-1.0)"
     )
-    
+
     @field_validator('label')
     @classmethod
     def validate_label(cls, v):
@@ -93,15 +94,15 @@ class DetectionListParams(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Standard error response format."""
-    
+
     error: str = Field(description="Error type identifier")
     message: str = Field(description="Human-readable error message")
-    details: Optional[dict] = Field(default=None, description="Additional error details")
+    details: dict | None = Field(default=None, description="Additional error details")
 
 
 class SuccessResponse(BaseModel):
     """Standard success response format."""
-    
+
     success: bool = Field(default=True, description="Operation success status")
     message: str = Field(description="Success message")
-    data: Optional[dict] = Field(default=None, description="Response data")
+    data: dict | None = Field(default=None, description="Response data")

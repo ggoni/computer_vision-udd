@@ -86,10 +86,10 @@ COCO_LABELS_ES = {
 
 def translate_label(label: str) -> str:
     """Translate English COCO label to Spanish.
-    
+
     Args:
         label: English label from COCO dataset
-        
+
     Returns:
         Spanish translation or original label if not found
     """
