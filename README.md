@@ -4,7 +4,60 @@
 
 FastAPI-based backend providing image upload, object detection analysis, and paginated listing of images and detections.
 
-## Usage Instructions
+## Quick Start
+
+### Super Simple Deployment
+```bash
+git clone https://github.com/ggoni/computer_vision-udd.git
+cd computer_vision-udd
+./start.sh
+```
+That's it! The script handles everything and shows you where to access the application.
+
+### Manual Docker Deployment
+```bash
+# Clone the repository
+git clone https://github.com/ggoni/computer_vision-udd.git
+cd computer_vision-udd
+
+# Start everything with Docker
+docker-compose up -d
+
+# Wait for services to start (30-60 seconds)
+# Then access the application:
+```
+
+**🌐 Access Points:**
+- **Frontend**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/docs
+- **Grafana Monitoring**: http://localhost:3001 (admin/grafana123)
+- **MinIO Storage**: http://localhost:9001 (minioadmin/minio123456)
+
+### What Gets Started
+- ✅ **Frontend**: React application for image upload and analysis
+- ✅ **Backend**: FastAPI server with YOLO object detection  
+- ✅ **Database**: PostgreSQL for storing metadata
+- ✅ **Storage**: MinIO for image and model storage
+- ✅ **Cache**: Redis for performance optimization
+- ✅ **Monitoring**: Prometheus + Grafana for observability
+
+### Quick Health Check
+```bash
+# Check if everything is running
+docker-compose ps
+
+# Test the API
+curl http://localhost:8000/health
+
+# View logs if needed
+docker-compose logs backend
+```
+
+---
+
+## Alternative Setup Methods
+
+### Development Setup (For Contributors)
 
 ### Prerequisites
 - Python 3.12+ with [uv](https://github.com/astral-sh/uv) installed
@@ -63,9 +116,65 @@ FastAPI-based backend providing image upload, object detection analysis, and pag
    ```
 
 5. **Open the application**
-   - Frontend: http://localhupost:5173
+   - Frontend: http://localhost:5173
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
+
+### Management Commands
+
+#### Docker Commands
+```bash
+# Start all services
+docker-compose up -d
+
+# Stop all services  
+docker-compose down
+
+# View service status
+docker-compose ps
+
+# View logs
+docker-compose logs backend
+docker-compose logs frontend
+
+# Rebuild after code changes
+docker-compose up -d --build
+
+# Remove everything (including data)
+docker-compose down -v
+```
+
+#### Advanced Management (Optional)
+```bash
+# Use the management script for advanced features
+./scripts/mlops.sh start-prod    # Alternative Docker setup
+./scripts/mlops.sh health        # Health checks
+./scripts/mlops.sh logs api      # Detailed logging
+./scripts/test-integration.sh    # Run integration tests
+```
+
+---
+
+## Simple Docker Deployment
+
+For a basic containerized deployment without the full MLOps stack:
+
+```bash
+# Start basic services
+docker-compose -f docker-compose.production.yml up -d
+
+# Check services
+docker-compose -f docker-compose.production.yml ps
+
+# Stop services
+docker-compose -f docker-compose.production.yml down
+```
+
+This provides the core application (API + Frontend + Database) without monitoring services.
+
+---
+
+## Usage Guide
 
 ### Using the Web Interface
 
@@ -148,56 +257,133 @@ Create `frontend/.env` for custom API URL:
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
+---
+
+## MLOps Configuration
+
+### Environment Variables (.env)
+Copy `.env.template` to `.env` and customize:
+
+#### Essential Settings
+```bash
+# Database
+DATABASE_URL=postgresql+asyncpg://cvuser:cvpass123@postgres:5432/computer_vision_db
+
+# ML Model  
+MODEL_NAME=hustvl/yolos-tiny
+CONFIDENCE_THRESHOLD=0.5
+
+# Security
+SECRET_KEY=your-secret-key-here
+
+# Monitoring
+PROMETHEUS_METRICS=true
+GRAFANA_ADMIN_PASSWORD=grafana123
+```
+
+#### Optional Cloud Storage (Production)
+```bash
+# AWS S3
+AWS_REGION=us-west-2
+AWS_ACCESS_KEY_ID=your-aws-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret
+
+# Google Cloud Storage
+GOOGLE_CLOUD_PROJECT=your-project-id
+GCS_BUCKET=cv-production-bucket
+
+# MinIO (Default for local/development)
+MINIO_ENDPOINT=minio:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minio123456
+```
+
+### Monitoring Dashboards
+
+#### Grafana Dashboards (localhost:3001)
+- **MLOps Dashboard**: API metrics, model performance, inference time
+- **Infrastructure Dashboard**: Resource usage, service health, database metrics
+
+#### Custom Metrics Available
+- `http_requests_total`: API request counts by endpoint
+- `model_inference_duration_seconds`: Model inference latency  
+- `model_prediction_confidence`: Model confidence score distribution
+- `detected_objects_total`: Object detection counts by class
+- `image_uploads_total`: Image upload rate
+
+#### Alerting Rules
+- High API latency (>2s 95th percentile)
+- High error rate (>10% 5xx responses)  
+- Low model confidence (<0.3 median)
+- Resource exhaustion (>80% memory/CPU)
+- Database slow queries (>1s average)
+
+### Backup & Maintenance
+```bash
+# Backup all data
+./scripts/mlops.sh backup
+
+# Update containers
+./scripts/mlops.sh update
+
+# Clean unused resources  
+./scripts/mlops.sh cleanup
+
+# View service status
+./scripts/mlops.sh status
+```
+
+---
+
+## File Storage & Model Information
 ### File Storage
-- Images are stored in organized directory structure: `uploads/YYYY/MM/DD/`
-- Filenames include content hash for deduplication: `abc123_original_name.jpg`
-- Collision detection adds random suffix if needed
-- File integrity verified via SHA256 hashing
+- **Development**: Images stored in `uploads/YYYY/MM/DD/` directory structure  
+- **Production**: MinIO object storage with S3-compatible API
+- **Security**: Filenames include content hash for deduplication: `abc123_original_name.jpg`
+- **Integrity**: File verification via SHA256 hashing
+- **Collision**: Automatic suffix addition if filename conflicts occur
 
 ### Model Information
 - Uses **YOLO-tiny** model from Hugging Face (`hustvl/yolos-tiny`)
-- First analysis may take longer due to model download (~100MB)
-- Model is cached locally in `~/.cache/huggingface/`
-- Supports 80+ object classes from COCO dataset
-- Confidence threshold can be filtered in the UI (default shows all >0.1)
+- **Performance**: First analysis may take longer due to model download (~100MB)
+- **Caching**: Model cached locally in `~/.cache/huggingface/` or Docker volumes
+- **Classes**: Supports 80+ object classes from COCO dataset
+- **Filtering**: Confidence threshold configurable (UI default shows >0.1)
+- **Alternative Models**: Easily switch to `hustvl/yolos-small` or `hustvl/yolos-base`
+
+---
+
+## Troubleshooting
 
 ### Troubleshooting
 
-#### Backend Issues
+#### Quick Fixes
 ```bash
-# Check database connection
-uv run python -c "from src.db.session import check_db_connection; import asyncio; print(asyncio.run(check_db_connection()))"
+# If services won't start
+docker-compose down
+docker-compose up -d
 
-# View logs with debug info
-APP_ENV=development PYTHONPATH=. uv run uvicorn src.main:app --log-level debug
+# If you see permission errors
+sudo chown -R $USER:$USER ./storage
 
-# Reset database schema
-uv run python scripts/init_db.py
-```
+# If frontend shows connection errors
+# Wait 60 seconds for backend to download the ML model on first run
 
-#### Frontend Issues
-```bash
-# Clear node modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-
-# Check API connectivity
-curl http://localhost:8000/api/v1/health
-
-# Run tests for debugging
-npm run test
+# Check service health
+curl http://localhost:8000/health
 ```
 
 #### Common Issues
-- **Database connection failed**: Ensure PostgreSQL is running and credentials are correct
-- **Role "user" does not exist**: Create the user with `createuser -s user` or use your existing PostgreSQL username in DATABASE_URL
-- **Model download slow**: First run downloads ~100MB model, subsequent runs are fast
-- **File upload fails**: Check file size (<5MB) and format (jpg/png/webp)
-- **CORS errors**: Ensure backend is running on port 8000 and frontend on 5173
+- **Services won't start**: Check Docker has enough memory (4GB+ recommended)
+- **Model download slow**: First run downloads ~100MB YOLO model, subsequent runs are fast
+- **Can't access frontend**: Wait for all services to be healthy (`docker-compose ps`)
+- **Database errors**: Ensure no other PostgreSQL is running on port 5432
 
 ## Architecture
 
-### Backend Structure
+### Development Structure
+
+#### Backend
 ```
 backend/
 ├── src/
@@ -214,7 +400,7 @@ backend/
 └── scripts/                # Database initialization
 ```
 
-### Frontend Structure
+#### Frontend
 ```
 frontend/
 ├── src/
@@ -225,6 +411,35 @@ frontend/
 │   └── __tests__/          # Component and page tests
 ├── public/                 # Static assets
 └── dist/                   # Build output
+```
+
+### MLOps Platform Structure
+
+#### Infrastructure Services
+- **API Service**: FastAPI with Prometheus metrics
+- **Frontend**: Production React build with Nginx  
+- **Database**: PostgreSQL with performance tuning
+- **Storage**: MinIO S3-compatible object storage
+- **Cache**: Redis for caching and job queuing
+- **Reverse Proxy**: Nginx with rate limiting
+
+#### MLOps Services  
+- **Training Service**: PyTorch + MLflow + Optuna
+- **EDA Service**: Jupyter Lab for data analysis
+- **Monitoring**: Prometheus + Grafana observability
+- **Logging**: Loki + Promtail log aggregation
+
+#### Container Architecture
+```
+docker/
+├── api/Dockerfile          # Production API container
+├── training/Dockerfile     # ML training environment
+├── eda/Dockerfile         # Jupyter data science setup
+├── frontend/Dockerfile    # Production React build
+├── prometheus/            # Metrics collection config
+├── grafana/              # Dashboard configurations
+├── nginx/nginx.conf      # Reverse proxy config
+└── postgres/init.sql     # Database initialization
 ```
 
 ### Technology Stack
@@ -245,12 +460,17 @@ frontend/
 - **TanStack Query**: Data fetching and caching
 - **Vitest**: Testing framework for frontend components
 
-#### DevOps & Quality
-- **GitHub Actions**: CI/CD pipeline
+#### DevOps & MLOps
+- **GitHub Actions**: CI/CD pipeline with security scanning
+- **Docker**: Multi-stage builds with security hardening
+- **Prometheus + Grafana**: Comprehensive monitoring and alerting
+- **MinIO**: S3-compatible object storage for production
+- **Nginx**: Production-grade reverse proxy and load balancer
 - **uv**: Python package management
 - **Ruff**: Python linting and formatting
 - **ESLint**: JavaScript/TypeScript linting
-- **Coverage**: Test coverage reporting
+
+---
 
 ## Endpoints Overview
 
@@ -391,26 +611,29 @@ cd backend && uv run alembic upgrade head
 
 ## Deployment
 
-### Production Recommendations
+### Production Deployment
+
+#### Simple Production (Recommended)
 ```bash
-# Backend production server
-PYTHONPATH=. uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 4
+# Start the full application stack
+docker-compose up -d
 
-# Frontend production build
-cd frontend && npm run build
-
-# Environment variables for production
-export APP_ENV=production
-export DATABASE_URL=postgresql+asyncpg://user:pass@prod-db:5432/cv_db
-export UPLOAD_DIR=/var/uploads
+# For production, consider:
+export POSTGRES_PASSWORD=your-secure-password
+export MINIO_ROOT_PASSWORD=your-secure-minio-password
+docker-compose up -d
 ```
 
-### Docker Support (Future Enhancement)
-The application is designed to be containerizable:
-- Backend: Python 3.12 + uv + FastAPI
-- Frontend: Node.js + Nginx for static serving
-- Database: PostgreSQL official image
-- Reverse Proxy: Nginx or Traefik
+#### Advanced MLOps Deployment (Optional)
+```bash
+# Full MLOps platform with additional services
+./scripts/mlops.sh start-mlops
+
+# Custom environment configuration
+cp .env.template .env
+# Edit .env with your settings
+./scripts/mlops.sh start-prod
+```
 
 ## Contributing
 
@@ -453,4 +676,6 @@ This project is part of the Computer Vision course at Universidad del Desarrollo
 ---
 
 **Built with ❤️ for computer vision education at UDD**
+
+Available as both a development environment and a production-ready MLOps platform.
 
