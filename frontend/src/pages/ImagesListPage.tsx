@@ -11,13 +11,15 @@ const ImagesListPage: React.FC = () => {
   const [filenameFilter, setFilenameFilter] = useState('');
 
   type AugImage = ImageResponse & { file_size_kb: number; upload_local: string };
-  const { data, isLoading, error } = useQuery<
+  const { data, isLoading, error, refetch } = useQuery<
     PaginatedResponse<ImageResponse>,
     Error,
     PaginatedResponse<AugImage>
   >({
     queryKey: ['images', page, status, filenameFilter],
     queryFn: () => listImages({ page, page_size: pageSize, status: status || undefined, filename_substr: filenameFilter || undefined }),
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     select: (resp) => ({
       ...resp,
       items: resp.items.map((img) => ({
@@ -30,23 +32,35 @@ const ImagesListPage: React.FC = () => {
 
   return (
     <div>
-      <h2>Images</h2>
+      <h2>Imágenes</h2>
       <div className="input-row">
-        <input placeholder="Status" value={status} onChange={(e) => setStatus(e.target.value)} />
-        <input placeholder="Filename contains" value={filenameFilter} onChange={(e) => setFilenameFilter(e.target.value)} />
-        <button onClick={() => setPage(1)}>Apply Filters</button>
+        <input placeholder="Estado" value={status} onChange={(e) => setStatus(e.target.value)} />
+        <input placeholder="El nombre contiene" value={filenameFilter} onChange={(e) => setFilenameFilter(e.target.value)} />
+        <button onClick={() => setPage(1)} disabled={isLoading}>
+          {isLoading ? 'Cargando...' : 'Aplicar Filtros'}
+        </button>
       </div>
-      {isLoading && <p>Loading...</p>}
-      {error && <p style={{ color: '#ef4444' }}>{(error as any).message}</p>}
+      {isLoading && <p>Cargando...</p>}
+      {error && (
+        <div style={{ color: '#ef4444', padding: '1rem', border: '1px solid #ef4444', borderRadius: '4px', margin: '1rem 0' }}>
+          <p><strong>Error al cargar imágenes:</strong> {(error as any).message}</p>
+          <button 
+            onClick={() => refetch()} 
+            style={{ marginTop: '0.5rem', padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
       {data && (
         <>
           <table className="table">
             <thead>
               <tr>
-                <th>Filename</th>
-                <th>Status</th>
-                <th>Size (KB)</th>
-                <th>Uploaded</th>
+                <th>Nombre de archivo</th>
+                <th>Estado</th>
+                <th>Tamaño (KB)</th>
+                <th>Subido</th>
               </tr>
             </thead>
             <tbody>
@@ -61,9 +75,9 @@ const ImagesListPage: React.FC = () => {
             </tbody>
           </table>
           <div style={{ marginTop: '.75rem', display: 'flex', gap: '.5rem' }}>
-            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
-            <span>Page {page} / {data.pages}</span>
-            <button disabled={!data.has_next} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</button>
+            <span>Página {page} / {data.pages}</span>
+            <button disabled={!data.has_next} onClick={() => setPage((p) => p + 1)}>Siguiente</button>
           </div>
         </>
       )}
