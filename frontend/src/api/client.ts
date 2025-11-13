@@ -2,8 +2,26 @@ import { ImageResponse, DetectionResponse, PaginatedResponse } from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
+// Global token reference for API client
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, init);
+  const headers = new Headers(init?.headers);
+  
+  // Inject Authorization header if token is available
+  if (authToken) {
+    headers.set('Authorization', `Bearer ${authToken}`);
+  }
+  
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers,
+  });
+  
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${text}`);
