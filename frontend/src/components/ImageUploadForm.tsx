@@ -18,7 +18,7 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
       return uploadImage(file);
     },
     onSuccess: (data) => {
-      pushToast(`Subido: ${data.filename}`);
+      pushToast(`Uploaded: ${data.filename}`);
       onUploaded(data);
       setFile(null);
     },
@@ -40,7 +40,7 @@ const ImageUploadForm: React.FC<Props> = ({ onUploaded }) => {
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
         <button type="submit" disabled={!file || mutation.isPending}>
-          {mutation.isPending ? 'Subiendo...' : 'Subir'}
+          {mutation.isPending ? 'Uploading...' : 'Upload'}
         </button>
       </div>
       {mutation.isError && <p style={{ color: '#ef4444' }}>{(mutation.error as any)?.message}</p>}

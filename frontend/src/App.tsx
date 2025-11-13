@@ -16,11 +16,11 @@ const App: React.FC = () => {
         <ToastProvider>
           <BrowserRouter>
             <header>
-              <h1>Panel de Visión Computacional</h1>
+              <h1>CV Dashboard</h1>
               <nav>
-                <Link to="/upload">Subir</Link>{' | '}
-                <Link to="/images">Imágenes</Link>{' | '}
-                <Link to="/detections">Detecciones</Link>
+                <Link to="/upload">Upload</Link>{' | '}
+                <Link to="/images">Images</Link>{' | '}
+                <Link to="/detections">Detections</Link>
               </nav>
             </header>
             <main>

@@ -36,10 +36,10 @@ describe('ImagesListPage', () => {
     renderWithProviders(<ImagesListPage />);
     // Wait for first image row
     await screen.findByText(/file-1-1.png/);
-    expect(screen.getByText(/Página 1 \/ 2/)).toBeInTheDocument();
-    const nextBtn = screen.getByRole('button', { name: /siguiente/i });
+    expect(screen.getByText(/Page 1 \/ 2/)).toBeInTheDocument();
+    const nextBtn = screen.getByRole('button', { name: /next/i });
     await user.click(nextBtn);
-    await waitFor(() => expect(screen.getByText(/Página 2 \/ 2/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Page 2 \/ 2/)).toBeInTheDocument());
     expect(client.listImages).toHaveBeenCalledWith({ page: 2, page_size: 10, status: undefined, filename_substr: undefined });
   });
 });
