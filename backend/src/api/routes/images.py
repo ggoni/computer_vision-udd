@@ -12,11 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ...db.session import get_db
 from ...schemas.common import PaginatedResponse
 from ...schemas.image import ImageResponse
+from ...schemas.validation import ImageListParams
 from ...services import ImageRepository, ImageService
 from ...utils import FileStorage
+from ...core.logging import get_logger
 from ..dependencies import validate_uploaded_image
 
 router = APIRouter(prefix="/api/v1/images", tags=["images"])
+logger = get_logger(__name__)
 
 
 async def get_image_service(db: AsyncSession = Depends(get_db)) -> ImageService:
@@ -33,55 +36,57 @@ async def upload_image(
     original_url: str | None = None,
     service: ImageService = Depends(get_image_service),
 ):
-    """Upload an image file and persist metadata."""
+    """Upload an image file and persist metadata.
+    
+    Following FastAPI best practices for file uploads and error handling.
+    """
     content = await file.read()
-    try:
-        image = await service.save_uploaded_image(
-            file_bytes=content,
-            filename=file.filename or "uploaded_image",
-            original_url=original_url,
-        )
-        return image
-    except ValueError as e:
-        detail = str(e)
-        if "already exists" in detail.lower():
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=detail
-        )
+    
+    # Service layer now handles HTTPExceptions directly
+    image = await service.upload_image(
+        image_content=content,
+        original_filename=file.filename or "uploaded_image",
+        content_type=file.content_type or "application/octet-stream",
+    )
+    return image
 
 
 @router.get("/{image_id}", response_model=ImageResponse)
 async def get_image(image_id: UUID, service: ImageService = Depends(get_image_service)):
-    """Retrieve image metadata by ID."""
+    """Retrieve image metadata by ID.
+
+    Following FastAPI best practices - service layer handles errors.
+    """
+    # Service method handles UUID and raises HTTPExceptions
     image = await service.get_image(image_id)
     if image is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Image {image_id} not found"
         )
     return image
 
 
 @router.get("/", response_model=PaginatedResponse[ImageResponse])
 async def list_images(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=200),
-    status: str | None = Query(None),
-    filename_substr: str | None = Query(None, min_length=1),
+    params: ImageListParams = Depends(),
     service: ImageService = Depends(get_image_service),
 ):
-    """List images with pagination and optional filters."""
+    """List images with pagination and optional filters.
+    
+    Following FastAPI best practices - service layer handles validation and errors.
+    """
     items, total = await service.get_paginated_images(
-        page=page,
-        page_size=page_size,
-        status=status,
-        filename_substr=filename_substr,
+        page=params.page,
+        page_size=params.page_size,
+        status=params.status,
+        filename_substr=params.filename_substr,
     )
     return PaginatedResponse[ImageResponse](
         items=items,
         total=total,
-        page=page,
-        page_size=page_size,
+        page=params.page,
+        page_size=params.page_size,
     )
 
 
