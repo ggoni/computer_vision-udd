@@ -666,6 +666,59 @@ Please include:
 - Environment details (OS, Python/Node versions)
 - Relevant logs or error messages
 
+---
+
+## Future Work
+
+### Pending Features
+
+#### Monitoring & Observability (PENDING)
+The MLOps infrastructure includes Prometheus and Grafana services, but **application-level metrics integration is not yet complete**:
+
+**Current Status:**
+- ✅ Grafana dashboards configured (http://localhost:3001)
+- ✅ Prometheus alerting rules defined
+- ✅ Infrastructure monitoring ready
+- ❌ Backend metrics endpoint not implemented
+- ❌ Application metrics not being collected
+
+**To Complete:**
+1. Add `prometheus-client` library to backend dependencies
+2. Implement `/metrics` endpoint exposing:
+   - `http_requests_total` - API request counts
+   - `http_request_duration_seconds` - Request latency
+   - `model_inference_duration_seconds` - Model inference time
+   - `model_prediction_confidence` - Confidence scores
+   - `detected_objects_total` - Detection counts by class
+   - `image_uploads_total` - Upload rate
+3. Fix service name mismatch in `docker/prometheus/prometheus.yml` (change `api` to `backend`)
+4. Instrument FastAPI middleware with Prometheus metrics
+
+**Impact:** Without this, dashboards show infrastructure metrics only, not application performance or ML model metrics.
+
+#### Additional MLOps Components (PENDING)
+The following services are referenced in configuration but not yet deployed:
+- **Node Exporter**: System-level metrics (CPU, memory, disk)
+- **PostgreSQL Exporter**: Database query performance metrics
+- **Redis Exporter**: Cache hit rates and performance
+- **Training Service**: ML model training pipeline
+- **Loki + Promtail**: Centralized log aggregation
+- **AlertManager**: Alert routing and notification system
+
+#### Planned Enhancements
+- [ ] User authentication and authorization (JWT infrastructure exists)
+- [ ] Image preprocessing pipeline (resize, normalization, augmentation)
+- [ ] Batch image upload and analysis
+- [ ] Export detection results (CSV, JSON formats)
+- [ ] Model versioning and A/B testing
+- [ ] Custom model fine-tuning interface
+- [ ] WebSocket support for real-time detection streaming
+- [ ] Image annotation and labeling tools for training data
+- [ ] API rate limiting and usage quotas
+- [ ] Cloud storage integration (AWS S3, Google Cloud Storage)
+
+---
+
 ## License
 
 This project is part of the Computer Vision course at Universidad del Desarrollo (UDD).
