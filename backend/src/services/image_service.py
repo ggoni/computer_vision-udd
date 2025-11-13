@@ -11,6 +11,7 @@ from fastapi import HTTPException, status
 from ..schemas.image import ImageInDB
 from .image_repository_impl import ImageRepository
 from ..utils.file_storage import FileStorage
+from ..utils.file_utils import validate_file_extension
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,10 @@ class ImageService:
         Raises:
             HTTPException: If validation fails or storage error occurs
         """
+        # Validate file extension first
+        if not validate_file_extension(original_filename):
+            raise ValueError(f'Unsupported file type. Filename: {original_filename}')
+        
         try:
             # Save file to storage (FileStorage.save_file is synchronous)
             stored_path = self._storage.save_file(
