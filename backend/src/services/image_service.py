@@ -157,7 +157,7 @@ class ImageService:
                 )
 
             # Delete from storage and database
-            await self._storage.delete_file(image.storage_path)
+            self._storage.delete_file(image.storage_path)
             result = await self._repo.delete(image_id)
 
             if not result:
