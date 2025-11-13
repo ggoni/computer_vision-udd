@@ -21,20 +21,9 @@ class ImageRepository(ImageRepositoryInterface):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(
-        self,
-        *,
-        filename: str,
-        file_path: str,
-        content_type: str,
-    ) -> Image:
+    async def create(self, image_data: dict) -> Image:
         """Create a new image record."""
-        image = Image(
-            filename=filename,
-            storage_path=file_path,
-            file_size=0,  # Will be updated by storage layer
-            status="pending",
-        )
+        image = Image(**image_data)
         self._session.add(image)
         try:
             await self._session.flush()

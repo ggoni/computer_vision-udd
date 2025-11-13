@@ -73,16 +73,12 @@ class ImageService:
             file_size = len(image_content)
 
             # Create database record
-            image_record = await self._repo.create(
-                filename=original_filename,
-                file_path=stored_path,
-                content_type=content_type,
-            )
-
-            # Update file size in database
-            image_record.file_size = file_size
-            await self._repo._session.flush()
-            await self._repo._session.refresh(image_record)
+            image_record = await self._repo.create({
+                "filename": original_filename,
+                "storage_path": stored_path,
+                "file_size": file_size,
+                "status": "pending",
+            })
 
             return ImageInDB.model_validate(image_record)
 

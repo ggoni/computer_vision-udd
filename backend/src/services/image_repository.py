@@ -12,13 +12,7 @@ class ImageRepositoryInterface(ABC):
     """Repository abstraction for ``Image`` entities."""
 
     @abstractmethod
-    async def create(
-        self,
-        *,
-        filename: str,
-        file_path: str,
-        content_type: str,
-    ) -> Image:
+    async def create(self, image_data: dict) -> Image:
         """Persist a new image record and return the created ORM instance."""
 
     @abstractmethod
