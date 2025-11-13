@@ -10,18 +10,27 @@ export function setAuthToken(token: string | null) {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
-  
-  // Inject Authorization header if token is available
-  if (authToken) {
-    headers.set('Authorization', `Bearer ${authToken}`);
+  // When body is FormData, don't create Headers object
+  // Browser must set Content-Type with boundary automatically
+  const isFormData = init?.body instanceof FormData;
+
+  let headers: HeadersInit | undefined;
+  if (isFormData) {
+    // For FormData, only add auth header if needed, don't use Headers object
+    headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined;
+  } else {
+    // For non-FormData, use Headers object as before
+    headers = new Headers(init?.headers);
+    if (authToken) {
+      (headers as Headers).set('Authorization', `Bearer ${authToken}`);
+    }
   }
-  
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers,
   });
-  
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`${res.status} ${res.statusText}: ${text}`);
