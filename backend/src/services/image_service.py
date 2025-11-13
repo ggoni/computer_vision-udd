@@ -10,8 +10,9 @@ from uuid import UUID
 from fastapi import HTTPException, status
 
 from ..schemas.image import ImageInDB
-from .image_repository_impl import ImageRepository
 from ..utils.file_storage import FileStorage
+from ..utils.file_utils import validate_file_extension
+from .image_repository_impl import ImageRepository
 
 logger = logging.getLogger(__name__)
 
@@ -67,15 +68,19 @@ class ImageService:
             HTTPException: If validation fails or storage error occurs
         """
         try:
+            # Validate file extension first
+            if not validate_file_extension(original_filename):
+                raise ValueError(f"File extension not allowed: {original_filename}")
+
             # Read bytes from BinaryIO
             if hasattr(image_content, 'read'):
                 file_bytes = image_content.read()
             else:
                 file_bytes = image_content
-            
+
             # Save file to storage (synchronous method)
             stored_path = self._storage.save_file(file_bytes, original_filename)
-            
+
             # Get file size
             file_size = len(file_bytes)
 
@@ -109,11 +114,11 @@ class ImageService:
             if isinstance(image_id, int):
                 # For int IDs, we need to handle this differently
                 # but our system uses UUIDs, so this is an error case
-                raise ValueError(f"Invalid image ID type: int")
+                raise ValueError("Invalid image ID type: int")
             elif isinstance(image_id, str):
                 from uuid import UUID as UUIDClass
                 image_id = UUIDClass(image_id)
-            
+
             image = await self._repo.get_by_id(image_id)
             return ImageInDB.model_validate(image) if image else None
         except Exception as e:
@@ -138,7 +143,7 @@ class ImageService:
         try:
             # Convert to UUID if needed
             if isinstance(image_id, int):
-                raise ValueError(f"Invalid image ID type: int")
+                raise ValueError("Invalid image ID type: int")
             elif isinstance(image_id, str):
                 from uuid import UUID as UUIDClass
                 image_id = UUIDClass(image_id)

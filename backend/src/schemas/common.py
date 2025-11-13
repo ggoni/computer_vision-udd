@@ -1,14 +1,14 @@
 """Common Pydantic schemas."""
 
 from math import ceil
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field, computed_field
 
 T = TypeVar("T")
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Generic paginated response schema."""
 
     items: list[T] = Field(..., description="List of items for current page")

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
+from src.api.routes.detection import get_detection_service  # type: ignore
 from src.main import app
 from src.schemas.detection import DetectionResponse
 from src.services.detection_service import DetectionService
@@ -50,11 +52,6 @@ class FakeDetectionService(DetectionService):  # type: ignore[misc]
 
 
 client = TestClient(app)
-
-# Override dependency with fixture to ensure cleanup
-import pytest
-
-from src.api.routes.detection import get_detection_service  # type: ignore
 
 
 @pytest.fixture(autouse=True)
