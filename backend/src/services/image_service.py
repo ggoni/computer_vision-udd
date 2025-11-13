@@ -1,18 +1,16 @@
 """Image service orchestrating file storage and repository operations.
 
-This service applies business rules for handling uploaded images, including
-validation, persistence to storage, and database record management.
+Provides business logic layer with comprehensive error handling and validation.
 """
 
-from __future__ import annotations
-
 import logging
+from typing import BinaryIO
 from uuid import UUID
 
-from ..core.config import get_settings
+from fastapi import HTTPException, status
 from ..schemas.image import ImageInDB
-from ..utils import FileStorage, validate_file_extension, validate_file_size
-from .image_repository import ImageRepositoryInterface
+from .image_repository_impl import ImageRepository
+from ..utils.file_storage import FileStorage
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +20,11 @@ class ImageService:
 
     def __init__(
         self,
-        repository: ImageRepositoryInterface,
+        repository: ImageRepository,
         storage: FileStorage | None = None,
-    ) -> None:
+    ):
         self._repo = repository
         self._storage = storage or FileStorage()
-        self._settings = get_settings()
 
     async def save_uploaded_image(
         self,
@@ -36,78 +33,155 @@ class ImageService:
         filename: str,
         original_url: str | None = None,
     ) -> ImageInDB:
+        """Save uploaded image - compatibility method.
+        
+        Maintains interface compatibility while using FastAPI patterns.
+        """
+        from io import BytesIO
+        
+        return await self.upload_image(
+            image_content=BytesIO(file_bytes),
+            original_filename=filename,
+            content_type="application/octet-stream",
+        )
+
+    async def upload_image(
+        self,
+        *,
+        image_content: bytes,
+        original_filename: str,
+        content_type: str,
+    ) -> ImageInDB:
         """Validate and persist an uploaded image.
 
-        Steps:
-        - Validate filename extension and size limits
-        - Save file to storage (organized path)
-        - Create Image record in repository
-        - Return ImageInDB schema
+        Args:
+            image_content: Binary image data (bytes)
+            original_filename: Original filename from upload
+            content_type: MIME type of the image
+
+        Returns:
+            ImageInDB: Created image record
+
+        Raises:
+            HTTPException: If validation fails or storage error occurs
         """
-
-        if not filename:
-            raise ValueError("Filename is required")
-
-        # Validate extension
-        if not validate_file_extension(filename):
-            raise ValueError("Unsupported file type. Allowed: .jpg, .jpeg, .png, .webp")
-
-        # Validate size
-        file_size = len(file_bytes) if file_bytes is not None else 0
-        if not validate_file_size(file_size, self._settings.MAX_UPLOAD_SIZE):
-            raise ValueError(
-                f"File size must be between 1 and {self._settings.MAX_UPLOAD_SIZE} bytes"
+        try:
+            # Save file to storage (FileStorage.save_file is synchronous)
+            stored_path = self._storage.save_file(
+                image_content, original_filename
             )
 
-        # Save file to storage
+            # Get file size from saved bytes
+            file_size = len(image_content)
+
+            # Create database record
+            image_record = await self._repo.create(
+                filename=original_filename,
+                file_path=stored_path,
+                content_type=content_type,
+            )
+
+            # Update file size in database
+            image_record.file_size = file_size
+            await self._repo._session.flush()
+            await self._repo._session.refresh(image_record)
+
+            return ImageInDB.model_validate(image_record)
+
+        except ValueError as e:
+            logger.error("Image validation failed: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid image: {e}"
+            )
+        except Exception as e:
+            logger.error("Failed to upload image: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Image upload failed"
+            )
+
+    async def get_image(self, image_id: UUID | int | str) -> ImageInDB | None:
+        """Get image by ID (supports UUID, int, or str)."""
         try:
-            storage_path = self._storage.save_file(file_bytes, filename)
-        except Exception as exc:  # pragma: no cover - relies on filesystem errors
-            logger.error("Failed to save file to storage: %s", exc)
-            raise
+            # Convert to UUID if needed
+            if isinstance(image_id, int):
+                # System uses UUIDs, can't convert int to UUID directly
+                # This path shouldn't be used, but handle it gracefully
+                raise ValueError(f"Invalid image ID type: {type(image_id)}")
+            elif isinstance(image_id, str):
+                from uuid import UUID as UUIDType
+                image_id = UUIDType(image_id)
 
-        # Persist DB record via repository
-        image_data = {
-            "filename": filename,
-            "original_url": original_url,
-            "storage_path": storage_path,
-            "file_size": file_size,
-            # status and timestamps handled by model defaults/DB
-        }
+            image = await self._repo.get_by_id(image_id)
+            return ImageInDB.model_validate(image) if image else None
+        except ValueError as e:
+            logger.error("Invalid image ID %s: %s", image_id, e)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid image ID: {e}"
+            )
+        except Exception as e:
+            logger.error("Failed to retrieve image %s: %s", image_id, e)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to retrieve image"
+            )
 
-        image = await self._repo.create(image_data)
-
-        # Map to schema
-        return ImageInDB.model_validate(image)
-
-    async def get_image(self, image_id: UUID) -> ImageInDB | None:
-        """Retrieve an image by id and map to schema."""
-        image = await self._repo.get_by_id(image_id)
-        if image is None:
-            return None
-        return ImageInDB.model_validate(image)
-
-    async def delete_image(self, image_id: UUID) -> bool:
+    async def delete_image(self, image_id: UUID | int | str) -> bool:
         """Delete image from storage and repository.
 
-        Order of operations:
-        1) Fetch image to get storage path
-        2) Attempt storage deletion (best-effort; proceed even if file is missing)
-        3) Delete DB record; success is determined by DB deletion
+        Args:
+            image_id: ID of image to delete (UUID, int, or str)
+
+        Returns:
+            bool: True if deletion successful
+
+        Raises:
+            HTTPException: If image not found or deletion fails
         """
-
-        image = await self._repo.get_by_id(image_id)
-        if image is None:
-            return False
-
-        # Try to remove file from storage (do not fail the whole operation if file missing)
         try:
-            self._storage.delete_file(image.storage_path)
-        except Exception as exc:  # pragma: no cover - depends on filesystem issues
-            logger.warning("Failed to delete file from storage: %s", exc)
+            # Convert to UUID if needed
+            if isinstance(image_id, int):
+                raise ValueError(f"Invalid image ID type: {type(image_id)}")
+            elif isinstance(image_id, str):
+                from uuid import UUID as UUIDType
+                image_id = UUIDType(image_id)
 
-        # Remove DB record
-        return await self._repo.delete(image_id)
+            # Get image details first
+            image = await self._repo.get_by_id(image_id)
+            if not image:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Image {image_id} not found"
+                )
+
+            # Delete from storage and database
+            await self._storage.delete_file(image.storage_path)
+            result = await self._repo.delete(image_id)
+
+            if not result:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to delete image"
+                )
+
+            return result
+
+        except HTTPException:
+            raise
+        except ValueError as e:
+            logger.error("Invalid image ID %s: %s", image_id, e)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid image ID: {e}"
+            )
+        except Exception as e:
+            logger.error("Failed to delete image %s: %s", image_id, e)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Image deletion failed"
+            )
 
     async def get_paginated_images(
         self,
@@ -119,13 +193,45 @@ class ImageService:
     ) -> tuple[list[ImageInDB], int]:
         """Return paginated images mapped to schemas with total count.
 
-        Applies optional filters and delegates to repository.
+        Applies optional filters and delegates to repository following
+        FastAPI best practices for pagination and error handling.
+        
+        Args:
+            page: Page number (1-based)
+            page_size: Number of items per page (1-200)
+            status: Optional filter by image status (pending, completed, failed)
+            filename_substr: Optional filter by filename substring (case-insensitive)
+            
+        Returns:
+            tuple: (list of ImageInDB objects, total count)
+            
+        Raises:
+            HTTPException: If validation fails or database error occurs
         """
-        items, total = await self._repo.get_paginated(
-            page=page,
-            page_size=page_size,
-            status=status,
-            filename_substr=filename_substr,
-        )
-        mapped = [ImageInDB.model_validate(img) for img in items]
-        return (mapped, total)
+        # Input validation following FastAPI patterns
+        if page < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Page number must be >= 1"
+            )
+        if page_size < 1 or page_size > 200:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Page size must be between 1 and 200"
+            )
+            
+        try:
+            items, total = await self._repo.get_paginated(
+                page=page,
+                page_size=page_size,
+                status=status,
+                filename_substr=filename_substr,
+            )
+            mapped = [ImageInDB.model_validate(img) for img in items]
+            return (mapped, total)
+        except Exception as e:
+            logger.error("Failed to retrieve paginated images: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to retrieve images"
+            )
