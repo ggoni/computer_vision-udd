@@ -55,7 +55,7 @@ def test_detect_objects_returns_formatted_results(mock_model_loader):
 
     assert len(results) == 2
     first = results[0]
-    assert first["label"] == "cat"
+    assert first["label"] == "gato"  # Translated from "cat" to Spanish
     assert first["confidence_score"] == pytest.approx(0.95)
     assert first["bbox"] == {"xmin": 10, "ymin": 20, "xmax": 110, "ymax": 120}
 
