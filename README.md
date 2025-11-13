@@ -1,67 +1,66 @@
 # Computer Vision Detection API
 
+![CI](https://github.com/ggoni/computer_vision-udd/actions/workflows/ci.yml/badge.svg)
 
-FastAPI-based backend providing image upload, object detection analysis, and paginated listing of images and detections.
-
-# Use case
-
-![People detection](use-case.png)
-
+FastAPI-based backend providing image upload, object detection analysis, and persistent storage for computer vision applications.
 
 ## Quick Start
 
-### Super Simple Deployment
-```bash
-git clone https://github.com/ggoni/computer_vision-udd.git
-cd computer_vision-udd
-./start.sh
-```
-That's it! The script handles everything and shows you where to access the application.
-
-### Manual Docker Deployment
+### Docker Deployment (Recommended)
 ```bash
 # Clone the repository
 git clone https://github.com/ggoni/computer_vision-udd.git
 cd computer_vision-udd
 
-# Start everything with Docker
-docker-compose up -d
+# Start all services
+docker compose up -d
 
 # Wait for services to start (30-60 seconds)
-# Then access the application:
+# Then access the application
 ```
 
 **🌐 Access Points:**
-- **Frontend**: http://localhost:3000 (Docker deployment)
+- **Frontend**: http://localhost:3000
 - **API Documentation**: http://localhost:8000/docs
-- **Grafana Monitoring**: http://localhost:3001 (admin/grafana123)
-- **Prometheus Metrics**: http://localhost:9090
-- **MinIO Storage Console**: http://localhost:9001 (minioadmin/minio123456)
-- **MinIO API**: http://localhost:9000
+- **API Health**: http://localhost:8000/health
 - **PostgreSQL**: localhost:5432 (cvuser/cvpass123)
-- **Redis**: localhost:6379
-
-> **Note**: Docker deployment uses port 3000 for frontend, while development mode uses port 5173.
 
 ### What Gets Started
-- ✅ **Frontend**: React application for image upload and analysis
+- ✅ **Frontend**: React application for image upload and visualization
 - ✅ **Backend**: FastAPI server with YOLO object detection  
-- ✅ **Database**: PostgreSQL for storing metadata
-- ✅ **Storage**: MinIO for image and model storage
-- ✅ **Cache**: Redis for performance optimization
-- ✅ **Monitoring**: Prometheus + Grafana for observability
+- ✅ **Database**: PostgreSQL for metadata storage
+- ✅ **Persistent Storage**: Local bind mount for uploaded images
 
-### Quick Health Check
+### Quick Commands
 ```bash
-# Check if everything is running
-docker-compose ps
+# View logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Stop services
+docker compose down
+
+# Check running services
+docker compose ps
 
 # Test the API
-curl http://localhost:8000/health
-
-# View logs if needed
-docker-compose logs backend
+curl http://localhost:8000/health/
+curl http://localhost:8000/api/v1/images/
 ```
+
+### Upload an Image
+```bash
+# Via API
+curl -F "file=@/path/to/image.jpg" http://localhost:8000/api/v1/images/upload
+
+# Via Frontend
+# Open http://localhost:3000 in your browser
+```
+
+### Data Persistence
+- **Images**: Stored in `./storage/uploads/` (persists between container restarts)
+- **Database**: PostgreSQL data in Docker volume `postgres_data`
+- **ML Models**: Cached in Docker volume `model_cache`
 
 ---
 
@@ -85,15 +84,10 @@ docker-compose logs backend
 2. **Set up the database**
    ```bash
    # Using Docker (recommended)
-   docker run --name cv-postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=cv_db -p 5432:5432 -d postgres:15
+   docker run --name cv-postgres -e POSTGRES_USER=cvuser -e POSTGRES_PASSWORD=cvpass123 -e POSTGRES_DB=computer_vision_db -p 5432:5432 -d postgres:16-alpine
    
-   # Or install PostgreSQL locally and create database with user
-   createuser -s user  # Create the user with superuser privileges
-   createdb -O user cv_db  # Create database owned by user
-   
-   # Or use your existing PostgreSQL user (replace 'your_username' with your actual username)
-   # createdb cv_db
-   # Then update DATABASE_URL to use your username instead of 'user'
+   # Or install PostgreSQL locally and create database
+   createdb computer_vision_db
    ```
 
 3. **Start the backend**
@@ -670,69 +664,16 @@ Please include:
 - Environment details (OS, Python/Node versions)
 - Relevant logs or error messages
 
----
-
-## Future Work
-
-### Pending Features
-
-#### Monitoring & Observability (PENDING)
-The MLOps infrastructure includes Prometheus and Grafana services, but **application-level metrics integration is not yet complete**:
-
-**Current Status:**
-- ✅ Grafana dashboards configured (http://localhost:3001)
-- ✅ Prometheus alerting rules defined
-- ✅ Infrastructure monitoring ready
-- ❌ Backend metrics endpoint not implemented
-- ❌ Application metrics not being collected
-
-**To Complete:**
-1. Add `prometheus-client` library to backend dependencies
-2. Implement `/metrics` endpoint exposing:
-   - `http_requests_total` - API request counts
-   - `http_request_duration_seconds` - Request latency
-   - `model_inference_duration_seconds` - Model inference time
-   - `model_prediction_confidence` - Confidence scores
-   - `detected_objects_total` - Detection counts by class
-   - `image_uploads_total` - Upload rate
-3. Fix service name mismatch in `docker/prometheus/prometheus.yml` (change `api` to `backend`)
-4. Instrument FastAPI middleware with Prometheus metrics
-
-**Impact:** Without this, dashboards show infrastructure metrics only, not application performance or ML model metrics.
-
-#### Additional MLOps Components (PENDING)
-The following services are referenced in configuration but not yet deployed:
-- **Node Exporter**: System-level metrics (CPU, memory, disk)
-- **PostgreSQL Exporter**: Database query performance metrics
-- **Redis Exporter**: Cache hit rates and performance
-- **Training Service**: ML model training pipeline
-- **Loki + Promtail**: Centralized log aggregation
-- **AlertManager**: Alert routing and notification system
-
-#### Planned Enhancements
-- [ ] User authentication and authorization (JWT infrastructure exists)
-- [ ] Image preprocessing pipeline (resize, normalization, augmentation)
-- [ ] Batch image upload and analysis
-- [ ] Export detection results (CSV, JSON formats)
-- [ ] Model versioning and A/B testing
-- [ ] Custom model fine-tuning interface
-- [ ] WebSocket support for real-time detection streaming
-- [ ] Image annotation and labeling tools for training data
-- [ ] API rate limiting and usage quotas
-- [ ] Cloud storage integration (AWS S3, Google Cloud Storage)
-
----
-
 ## License
 
-This project is part of the 2025 version of the Computer Vision class, in the _Inteligencia Artificial para la Transformación Empresarial_ program at Universidad del Desarrollo (UDD), Chile.
+This project is part of the Computer Vision course at Universidad del Desarrollo (UDD).
 
-**Educational Use License**: This project is intended for **educational purposes only**. Students and educators are free to use, modify, and learn from this codebase. Commercial use requires permission from the course instructors.
+**Educational Use License**: This project is intended for educational purposes. Students and educators are free to use, modify, and learn from this codebase. Commercial use requires permission from the course instructors.
 
 ## Acknowledgments
 
 - **Hugging Face**: For providing the YOLO model and transformers library
-- **FastAPI Team**: For the async web framework
+- **FastAPI Team**: For the excellent async web framework
 - **React Team**: For the component-based UI library
 - **Universidad del Desarrollo**: For supporting this educational project
 
