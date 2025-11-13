@@ -1,10 +1,12 @@
 # syntax=docker/dockerfile:1.7
+# Use Python slim image - PyTorch will be installed via pip with cache optimization
 FROM python:3.12-slim AS base
 
 # Install system dependencies for ML and production
 RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -19,7 +21,7 @@ WORKDIR /app
 # ============================================================================
 FROM base AS dependencies
 
-# Copy project configuration
+# Copy only dependency files first for better caching
 COPY backend/pyproject.toml backend/uv.lock ./
 
 # Configure uv for container environment
@@ -28,8 +30,9 @@ ENV UV_SYSTEM_PYTHON=1 \
     UV_NO_PROGRESS=1 \
     UV_COMPILE_BYTECODE=1
 
-# Install dependencies with cache mount
+# Install dependencies with cache mount, excluding torch packages (already in base image)
 RUN --mount=type=cache,target=/tmp/uv-cache \
+    --mount=type=cache,target=/root/.cache/pip \
     uv sync --frozen --no-editable
 
 # ============================================================================

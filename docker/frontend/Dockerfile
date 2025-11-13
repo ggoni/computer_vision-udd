@@ -16,12 +16,12 @@ RUN apk add --no-cache \
 # ============================================================================
 FROM base AS dependencies
 
-# Copy package files
+# Copy package files for better layer caching
 COPY package*.json ./
 
-# Install dependencies with cache mount
+# Install production dependencies with cache mount and clean up
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --only=production && \
+    npm ci --only=production --no-audit --no-fund && \
     npm cache clean --force
 
 # ============================================================================
@@ -29,12 +29,11 @@ RUN --mount=type=cache,target=/root/.npm \
 # ============================================================================
 FROM dependencies AS build
 
-# Install development dependencies
-COPY package*.json ./
+# Install ALL dependencies (including dev) for building
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+    npm ci --no-audit --no-fund
 
-# Copy source code
+# Copy source code (done after npm install for better caching)
 COPY src ./src
 COPY public ./public
 COPY index.html ./
@@ -42,7 +41,7 @@ COPY vite.config.ts ./
 COPY tsconfig.json ./
 COPY tsconfig.node.json ./
 
-# Build the application
+# Build the application with optimizations
 RUN npm run build
 
 # ============================================================================
@@ -71,9 +70,9 @@ RUN chown -R appuser:appuser /usr/share/nginx/html && \
 # Expose port
 EXPOSE 80
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+# Health check with faster response
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-# Start nginx (run as root to avoid permission issues)
+# Start nginx (run as root to bind to port 80)
 CMD ["nginx", "-g", "daemon off;"]
