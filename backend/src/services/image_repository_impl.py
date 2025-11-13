@@ -21,8 +21,20 @@ class ImageRepository(ImageRepositoryInterface):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(self, image_data: dict) -> Image:
-        image = Image(**image_data)
+    async def create(
+        self,
+        *,
+        filename: str,
+        file_path: str,
+        content_type: str,
+    ) -> Image:
+        """Create a new image record."""
+        image = Image(
+            filename=filename,
+            storage_path=file_path,
+            file_size=0,  # Will be updated by storage layer
+            status="pending",
+        )
         self._session.add(image)
         try:
             await self._session.flush()
@@ -77,6 +89,7 @@ class ImageRepository(ImageRepositoryInterface):
         if page <= 0 or page_size <= 0:
             return ([], 0)
 
+        # Build base query with filters
         stmt = select(Image)
         if status:
             stmt = stmt.where(Image.status == status)
@@ -84,14 +97,26 @@ class ImageRepository(ImageRepositoryInterface):
             like_pattern = f"%{filename_substr}%"
             stmt = stmt.where(Image.filename.ilike(like_pattern))
 
-        count_stmt = stmt.with_only_columns(func.count()).order_by(None)
-        total = (await self._session.execute(count_stmt)).scalar_one()
+        # Optimize count query - use simpler select without ordering
+        try:
+            count_stmt = select(func.count()).select_from(Image)
+            if status:
+                count_stmt = count_stmt.where(Image.status == status)
+            if filename_substr:
+                like_pattern = f"%{filename_substr}%"
+                count_stmt = count_stmt.where(Image.filename.ilike(like_pattern))
+            
+            total = (await self._session.execute(count_stmt)).scalar_one()
 
-        page_stmt = (
-            stmt.order_by(Image.upload_timestamp.desc(), Image.created_at.desc())
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
-        result = await self._session.execute(page_stmt)
-        items = list(result.scalars().all())
-        return (items, total)
+            # Get page data with proper ordering and limits
+            page_stmt = (
+                stmt.order_by(Image.upload_timestamp.desc(), Image.created_at.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+            result = await self._session.execute(page_stmt)
+            items = list(result.scalars().all())
+            return (items, total)
+        except Exception as e:
+            logger.error("Database query failed in get_paginated: %s", e)
+            raise
