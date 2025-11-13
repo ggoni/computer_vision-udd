@@ -56,19 +56,20 @@ class DetectionRepository:
         if page <= 0 or page_size <= 0:
             return ([], 0)
 
-        conditions = []
-        if label is not None:
-            conditions.append(Detection.label == label)
-        if min_confidence is not None:
-            conditions.append(Detection.confidence_score >= min_confidence)
-
+        # Build base query
         base = select(Detection)
-        if conditions:
-            for cond in conditions:
-                base = base.where(cond)
+        if label is not None:
+            base = base.where(Detection.label == label)
+        if min_confidence is not None:
+            base = base.where(Detection.confidence_score >= min_confidence)
 
-        # total count
-        count_stmt = base.with_only_columns(func.count()).order_by(None)
+        # Build count query with same filters
+        count_stmt = select(func.count()).select_from(Detection)
+        if label is not None:
+            count_stmt = count_stmt.where(Detection.label == label)
+        if min_confidence is not None:
+            count_stmt = count_stmt.where(Detection.confidence_score >= min_confidence)
+
         total = (await self._session.execute(count_stmt)).scalar_one()
 
         # page items
