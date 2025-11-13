@@ -9,9 +9,9 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from ..models.image import ImageInDB
-from ..repositories.image_repository import ImageRepository
-from ..storage.file_storage import FileStorage
+from ..schemas.image import ImageInDB
+from .image_repository_impl import ImageRepository
+from ..utils.file_storage import FileStorage
 
 logger = logging.getLogger(__name__)
 
@@ -67,17 +67,25 @@ class ImageService:
             HTTPException: If validation fails or storage error occurs
         """
         try:
-            # Upload to storage first
-            stored_path = await self._storage.store_file(
-                image_content, original_filename, content_type
-            )
+            # Read bytes from BinaryIO
+            if hasattr(image_content, 'read'):
+                file_bytes = image_content.read()
+            else:
+                file_bytes = image_content
+            
+            # Save file to storage (synchronous method)
+            stored_path = self._storage.save_file(file_bytes, original_filename)
+            
+            # Get file size
+            file_size = len(file_bytes)
 
             # Create database record
-            image_record = await self._repo.create(
-                filename=original_filename,
-                file_path=stored_path,
-                content_type=content_type,
-            )
+            image_record = await self._repo.create({
+                "filename": original_filename,
+                "storage_path": stored_path,
+                "file_size": file_size,
+                "status": "pending",
+            })
 
             return ImageInDB.model_validate(image_record)
 
@@ -94,12 +102,19 @@ class ImageService:
                 detail="Image upload failed"
             ) from e
 
-    async def get_image(self, image_id: UUID) -> ImageInDB | None:
-        """Get image by UUID - compatibility method."""
-        # Convert UUID to int if needed, or handle UUID properly
-        # For now, assume the system uses UUIDs consistently
+    async def get_image(self, image_id: UUID | int | str) -> ImageInDB | None:
+        """Get image by ID (supports UUID, int, or str)."""
         try:
-            image = await self._repo.get_by_id(str(image_id))
+            # Convert to UUID if needed
+            if isinstance(image_id, int):
+                # For int IDs, we need to handle this differently
+                # but our system uses UUIDs, so this is an error case
+                raise ValueError(f"Invalid image ID type: int")
+            elif isinstance(image_id, str):
+                from uuid import UUID as UUIDClass
+                image_id = UUIDClass(image_id)
+            
+            image = await self._repo.get_by_id(image_id)
             return ImageInDB.model_validate(image) if image else None
         except Exception as e:
             logger.error("Failed to retrieve image %s: %s", image_id, e)
@@ -121,11 +136,15 @@ class ImageService:
             HTTPException: If image not found or deletion fails
         """
         try:
-            # Convert to string for consistent handling
-            id_str = str(image_id)
+            # Convert to UUID if needed
+            if isinstance(image_id, int):
+                raise ValueError(f"Invalid image ID type: int")
+            elif isinstance(image_id, str):
+                from uuid import UUID as UUIDClass
+                image_id = UUIDClass(image_id)
 
             # Get image details first
-            image = await self._repo.get_by_id(id_str)
+            image = await self._repo.get_by_id(image_id)
             if not image:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -133,8 +152,8 @@ class ImageService:
                 )
 
             # Delete from storage and database
-            await self._storage.delete_file(image.file_path)
-            result = await self._repo.delete(id_str)
+            self._storage.delete_file(image.storage_path)
+            result = await self._repo.delete(image_id)
 
             if not result:
                 raise HTTPException(

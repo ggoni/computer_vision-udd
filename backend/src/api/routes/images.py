@@ -1,24 +1,18 @@
 """Image routes for upload, retrieval, download, and deletion."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-
-if TYPE_CHECKING:
-    from pathlib import Path
-    from uuid import UUID
-
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    from ...schemas.validation import ImageListParams
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.logging import get_logger
 from ...db.session import get_db
 from ...schemas.common import PaginatedResponse
 from ...schemas.image import ImageResponse
+from ...schemas.validation import ImageListParams
 from ...services import ImageRepository, ImageService
 from ...utils import FileStorage
 from ..dependencies import validate_uploaded_image
@@ -38,7 +32,7 @@ async def get_image_service(db: AsyncSession = Depends(get_db)) -> ImageService:
 )
 async def upload_image(
     file: UploadFile = Depends(validate_uploaded_image),
-    original_url: str | None = None,
+    original_url: Optional[str] = None,
     service: ImageService = Depends(get_image_service),
 ):
     """Upload an image file and persist metadata.

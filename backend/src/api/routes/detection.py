@@ -1,15 +1,10 @@
 """Detection routes for analyzing images and listing detections."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from typing import Optional
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-
-if TYPE_CHECKING:
-    from uuid import UUID
-
-    from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db.session import get_db
 from ...schemas.common import PaginatedResponse
@@ -63,8 +58,8 @@ async def list_image_detections(
 async def list_detections(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    label: str | None = Query(None, min_length=1),
-    min_confidence: float | None = Query(None, ge=0.0, le=1.0),
+    label: Optional[str] = Query(None, min_length=1),
+    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0),
     service: DetectionService = Depends(get_detection_service),
 ):
     """List detections globally with pagination and optional filters."""
