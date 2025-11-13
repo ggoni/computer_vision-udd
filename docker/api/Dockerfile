@@ -1,12 +1,11 @@
 # syntax=docker/dockerfile:1.7
-# Use Python slim image - PyTorch will be installed via pip with cache optimization
 FROM python:3.12-slim AS base
 
 # Install system dependencies for ML and production
 RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
-    python3-pip \
+    gosu \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -21,7 +20,7 @@ WORKDIR /app
 # ============================================================================
 FROM base AS dependencies
 
-# Copy only dependency files first for better caching
+# Copy project configuration
 COPY backend/pyproject.toml backend/uv.lock ./
 
 # Configure uv for container environment
@@ -30,9 +29,8 @@ ENV UV_SYSTEM_PYTHON=1 \
     UV_NO_PROGRESS=1 \
     UV_COMPILE_BYTECODE=1
 
-# Install dependencies with cache mount, excluding torch packages (already in base image)
+# Install dependencies with cache mount
 RUN --mount=type=cache,target=/tmp/uv-cache \
-    --mount=type=cache,target=/root/.cache/pip \
     uv sync --frozen --no-editable
 
 # ============================================================================
@@ -52,7 +50,7 @@ COPY --from=dependencies /app/.venv /app/.venv
 # Set environment variables for production
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app/backend \
+    PYTHONPATH=/app:/app/backend \
     TRANSFORMERS_CACHE=/app/.cache/transformers \
     TORCH_HOME=/app/.cache/torch \
     UV_SYSTEM_PYTHON=1 \
@@ -60,7 +58,7 @@ ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
 
 # Create cache and storage directories and home directory for appuser
-RUN mkdir -p /app/.cache /app/storage /app/logs /home/appuser && \
+RUN mkdir -p /app/.cache /app/backend/storage/uploads /app/logs /home/appuser && \
     chown -R appuser:appuser /app /home/appuser
 
 # Copy application code
@@ -70,9 +68,6 @@ COPY --chown=appuser:appuser docker/api/entrypoint.sh /app/
 
 # Make entrypoint executable
 RUN chmod +x /app/entrypoint.sh
-
-# Switch to non-root user
-USER appuser
 
 # Expose API and metrics ports
 EXPOSE 8000 8001
