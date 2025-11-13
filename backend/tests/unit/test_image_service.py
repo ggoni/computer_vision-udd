@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
+from fastapi import HTTPException
 
 from src.schemas.image import ImageInDB
 from src.services.image_service import ImageService
@@ -39,8 +40,11 @@ async def mock_storage():
 async def test_save_uploaded_image_validates_extension(mock_repo, mock_storage):
     service = ImageService(mock_repo, mock_storage)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(HTTPException) as exc_info:
         await service.save_uploaded_image(file_bytes=b"data", filename="malware.exe")
+
+    assert exc_info.value.status_code == 400
+    assert "extension not allowed" in str(exc_info.value.detail).lower()
 
 
 @pytest.mark.asyncio

@@ -50,7 +50,7 @@ async def upload_image(
 
 
 @router.get("/{image_id}", response_model=ImageResponse)
-async def get_image(image_id: int, service: ImageService = Depends(get_image_service)):
+async def get_image(image_id: UUID, service: ImageService = Depends(get_image_service)):
     """Retrieve image metadata by ID.
 
     Following FastAPI best practices - service layer handles errors.
