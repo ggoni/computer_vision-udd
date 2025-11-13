@@ -1,7 +1,6 @@
 """Image routes for upload, retrieval, download, and deletion."""
 
 from pathlib import Path
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -32,7 +31,7 @@ async def get_image_service(db: AsyncSession = Depends(get_db)) -> ImageService:
 )
 async def upload_image(
     file: UploadFile = Depends(validate_uploaded_image),
-    original_url: Optional[str] = None,
+    original_url: str | None = None,
     service: ImageService = Depends(get_image_service),
 ):
     """Upload an image file and persist metadata.

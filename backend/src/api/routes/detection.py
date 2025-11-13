@@ -1,6 +1,5 @@
 """Detection routes for analyzing images and listing detections."""
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -58,8 +57,8 @@ async def list_image_detections(
 async def list_detections(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    label: Optional[str] = Query(None, min_length=1),
-    min_confidence: Optional[float] = Query(None, ge=0.0, le=1.0),
+    label: str | None = Query(None, min_length=1),
+    min_confidence: float | None = Query(None, ge=0.0, le=1.0),
     service: DetectionService = Depends(get_detection_service),
 ):
     """List detections globally with pagination and optional filters."""
