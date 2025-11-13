@@ -1,12 +1,15 @@
 name: CD - Build & Deploy
 
+# Deploy on successful merges to main
 on:
   push:
     branches: [main]
+  
+  # Allow manual deployment
+  workflow_dispatch:
 
-# Permissions for OIDC token generation
+# Permissions for container registry
 permissions:
-  id-token: write
   contents: read
   packages: write
 
@@ -16,8 +19,9 @@ env:
   IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
 
 jobs:
+  # Build backend Docker image
   build-backend:
-    name: Build Backend Docker Image
+    name: Build Backend
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
@@ -36,7 +40,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -44,8 +48,6 @@ jobs:
           tags: |
             type=sha,prefix={{branch}}-,format=short
             type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push backend image
@@ -59,21 +61,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Multi-platform support (optional, uncomment if needed)
-          # platforms: linux/amd64,linux/arm64
 
-      # Attestations require additional repository permissions
-      # Uncomment and configure repository settings if needed:
-      # Settings > Actions > General > Workflow permissions > Read and write permissions
-      # - name: Generate artifact attestation
-      #   uses: actions/attest-build-provenance@v1
-      #   with:
-      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
-      #     subject-digest: ${{ steps.build.outputs.digest }}
-      #     push-to-registry: true
-
+  # Build frontend Docker image
   build-frontend:
-    name: Build Frontend Docker Image
+    name: Build Frontend
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
@@ -92,7 +83,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -100,8 +91,6 @@ jobs:
           tags: |
             type=sha,prefix={{branch}}-,format=short
             type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push frontend image
@@ -115,101 +104,24 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Multi-platform support (optional, uncomment if needed)
-          # platforms: linux/amd64,linux/arm64
 
-      # Attestations require additional repository permissions
-      # Uncomment and configure repository settings if needed:
-      # Settings > Actions > General > Workflow permissions > Read and write permissions
-      # - name: Generate artifact attestation
-      #   uses: actions/attest-build-provenance@v1
-      #   with:
-      #     subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
-      #     subject-digest: ${{ steps.build.outputs.digest }}
-      #     push-to-registry: true
-
+  # Deployment summary
   deploy:
-    name: Deploy to Production
+    name: Deployment Summary
     runs-on: ubuntu-latest
     needs: [build-backend, build-frontend]
-    # Uncomment and configure for your deployment target
-    # environment:
-    #   name: production
-    #   url: https://your-app.example.com
     steps:
-      - name: Deployment Summary
+      - name: Deployment summary
         run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Summary 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ needs.build-backend.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Digest: ${{ needs.build-backend.outputs.image_digest }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Frontend Image" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ needs.build-frontend.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Digest: ${{ needs.build-frontend.outputs.image_digest }}" >> $GITHUB_STEP_SUMMARY
-
-      # Example: Deploy to cloud platform using OIDC
-      # Uncomment and configure based on your cloud provider
-
-      # For AWS ECS/Fargate:
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-      #     aws-region: us-east-1
-
-      # - name: Deploy to ECS
-      #   run: |
-      #     aws ecs update-service \
-      #       --cluster my-cluster \
-      #       --service my-service \
-      #       --force-new-deployment
-
-      # For Google Cloud Run:
-      # - name: Authenticate to Google Cloud
-      #   uses: google-github-actions/auth@v2
-      #   with:
-      #     workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-      #     service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      # - name: Deploy backend to Cloud Run
-      #   run: |
-      #     gcloud run deploy backend \
-      #       --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }} \
-      #       --region us-central1 \
-      #       --platform managed
-
-      # For Azure Container Instances:
-      # - name: Azure Login with OIDC
-      #   uses: azure/login@v1
-      #   with:
-      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
-      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      # - name: Deploy to Azure Container Instances
-      #   run: |
-      #     az container create \
-      #       --resource-group my-rg \
-      #       --name backend \
-      #       --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}
-
-      # For Kubernetes (with kubectl):
-      # - name: Set up kubectl
-      #   uses: azure/setup-kubectl@v3
-
-      # - name: Deploy to Kubernetes
-      #   run: |
-      #     kubectl set image deployment/backend \
-      #       backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }} \
-      #       -n production
-      #     kubectl rollout status deployment/backend -n production
-
-      - name: Deployment placeholder
-        run: |
-          echo "✅ Images built and pushed successfully"
-          echo "📦 Configure your deployment target in this workflow"
-          echo ""
-          echo "Backend: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}"
-          echo "Frontend: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}"
+          echo "### Images Built" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Images are available in GitHub Container Registry" >> $GITHUB_STEP_SUMMARY
+          echo "- Use docker-compose.yml to deploy locally" >> $GITHUB_STEP_SUMMARY
+          echo "- Configure your deployment target as needed" >> $GITHUB_STEP_SUMMARY

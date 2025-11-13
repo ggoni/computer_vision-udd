@@ -1,10 +1,28 @@
-name: CI
+name: CI - Lint & Test
 
+# Trigger on pull requests to main (not on push to avoid duplicate runs)
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
+  push:
+    branches: [ main ]
+    # Only run on main for merged PRs, not on every commit
+
+# Set minimum permissions required
+permissions:
+  contents: read
+  security-events: write  # For CodeQL/security scans
+  checks: write          # For test results
+
+# Cancel previous runs on the same PR to save resources
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Centralized Python version management
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
 
 jobs:
   backend:
@@ -31,22 +49,39 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Add uv to PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Cache model weights
+      # Enhanced caching strategy for uv and models
+      - name: Cache uv dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.cache/models
-          key: ${{ runner.os }}-models-${{ hashFiles('**/pyproject.toml') }}
+          path: |
+            ~/.cache/uv
+            backend/.venv
+          key: uv-${{ runner.os }}-python${{ env.PYTHON_VERSION }}-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-models-
+            uv-${{ runner.os }}-python${{ env.PYTHON_VERSION }}-
+            uv-${{ runner.os }}-
+      
+      - name: Cache ML model weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: huggingface-models-${{ hashFiles('backend/pyproject.toml') }}
+          restore-keys: |
+            huggingface-models-
       - name: Wait for Postgres
         run: |
           for i in {1..10}; do
             pg_isready -h localhost -U user && exit 0 || sleep 2;
           done;
           echo "Postgres not ready"; exit 1
+      # Optimized dependency installation with frozen lockfile
       - name: Sync dependencies (dev group)
         working-directory: backend
-        run: uv sync --group dev
+        run: |
+          # Use frozen lockfile for reproducible builds
+          uv sync --frozen --group dev
+          # Verify critical packages are installed
+          uv pip list | grep -E "(fastapi|pytest|sqlalchemy)"
         env:
           DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/cv_db
           APP_ENV: test
