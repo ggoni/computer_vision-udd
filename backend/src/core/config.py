@@ -25,11 +25,6 @@ class Settings(BaseSettings):
         description="Async PostgreSQL database URL",
     )
 
-    # Redis Configuration
-    REDIS_URL: str = Field(
-        default="redis://localhost:6379/0", description="Redis connection URL"
-    )
-
     # File Upload Configuration
     UPLOAD_DIR: str = Field(
         default="storage/uploads",
