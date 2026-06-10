@@ -689,6 +689,44 @@ Please include:
 - Environment details (OS, Python/Node versions)
 - Relevant logs or error messages
 
+## Handwritten Text Recognition (OCR)
+
+The platform supports extracting handwritten text from uploaded images using Claude 3.5 Sonnet via the OpenRouter API. OCR runs in parallel with YOLO object detection.
+
+### Configuration
+
+Set the `OPENROUTER_API_KEY` environment variable (see `.env.example`):
+
+```bash
+OPENROUTER_API_KEY=sk-or-your-key-here
+```
+
+Get a key at [openrouter.ai](https://openrouter.ai/).
+
+### API Response
+
+When OCR is enabled, detection results include a `text_extraction` field:
+
+```json
+{
+  "image_id": "uuid",
+  "status": "success",
+  "detections": [
+    {"label": "person", "box": {"x": 100, "y": 200, "w": 50, "h": 100}, "confidence": 0.94}
+  ],
+  "text_extraction": {
+    "text": "Meeting notes:\n- Review Q2\n- Budget cut 10%",
+    "confidence": 0.85,
+    "model": "claude-3.5-sonnet",
+    "error": null
+  }
+}
+```
+
+If OCR fails but object detection succeeds, `status` is `"partial"` and `text_extraction.error` contains the failure reason.
+
+If no handwriting is detected, `text_extraction.text` is `null` and `confidence` is `1.0`.
+
 ## License
 
 This project is part of the Computer Vision course at Universidad del Desarrollo (UDD).

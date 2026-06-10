@@ -385,15 +385,15 @@ uv run pytest backend/tests/unit/test_detection_schema.py::test_detection_result
 
 ## Rollout Checklist
 
-- [ ] Task 1.1: httpx added
-- [ ] Task 1.2: Config supports API key
-- [ ] Task 2.1: OpenRouterOCRService implemented
-- [ ] Task 2.2: Unit tests pass
-- [ ] Task 3.1: Celery task updated
-- [ ] Task 3.2: Response schema updated
-- [ ] Task 4.1: E2E test passes
-- [ ] Task 4.2: Error scenarios handled
-- [ ] Task 5.1: README updated
-- [ ] Task 5.2: .env.example updated
+- [x] Task 1.1: httpx added
+- [x] Task 1.2: Config supports API key
+- [x] Task 2.1: OpenRouterOCRService implemented
+- [x] Task 2.2: Unit tests pass
+- [x] Task 3.1: Celery task updated
+- [x] Task 3.2: Response schema updated
+- [x] Task 4.1: E2E test passes
+- [x] Task 4.2: Error scenarios handled
+- [x] Task 5.1: README updated
+- [x] Task 5.2: .env.example updated
 
 **Ready to implement?** Exit explore mode and start Task 1.1.

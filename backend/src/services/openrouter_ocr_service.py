@@ -114,3 +114,11 @@ class OpenRouterOCRService:
                 "model": self._model,
                 "error": str(e),
             }
+        except Exception as e:
+            logger.error("Unexpected error during OCR extraction: %s", e)
+            return {
+                "text": None,
+                "confidence": 0.0,
+                "model": self._model,
+                "error": str(e),
+            }

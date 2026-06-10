@@ -1,4 +1,11 @@
 
+"""Pydantic schemas for Detection model."""
+
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, Field, model_validator
+
 
 class TextExtractionSchema(BaseModel):
     """Schema for handwritten text extraction results from OpenRouter."""
@@ -10,15 +17,7 @@ class TextExtractionSchema(BaseModel):
         ..., ge=0.0, le=1.0, description="Confidence score for the extraction"
     )
     model: str = Field(..., description="Model used for extraction (e.g., claude-3.5-sonnet)")
-    error: str | None = Field(
-        None, description="Error message if extraction failed"
-    )
-"""Pydantic schemas for Detection model."""
-
-from datetime import datetime
-from uuid import UUID
-
-from pydantic import BaseModel, Field, model_validator
+    error: str | None = Field(None, description="Error message if extraction failed")
 
 
 class BoundingBox(BaseModel):
@@ -94,3 +93,12 @@ class DetectionWithBBox(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class DetectionResultSchema(BaseModel):
+    """Schema for combined detection + OCR API response."""
+
+    image_id: str
+    status: str = Field(..., pattern="^(success|partial)$")
+    detections: list[DetectionResponse] = Field(default_factory=list)
+    text_extraction: TextExtractionSchema | None = None
