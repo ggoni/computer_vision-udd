@@ -55,8 +55,11 @@ curl http://localhost:8000/api/v1/images/
 
 ### Upload an Image
 ```bash
-# Via API
-curl -F "file=@/path/to/image.jpg" http://localhost:8000/api/v1/images/upload
+# Upload a test image (object detection)
+curl -F "file=@test_images/cats_couch.jpg" http://localhost:8000/api/v1/images/upload
+
+# Upload handwritten note (triggers OCR + object detection)
+curl -F "file=@test_images/nota-a-mano.jpeg" http://localhost:8000/api/v1/images/upload
 
 # Via Frontend
 # Open http://localhost:3000 in your browser
@@ -691,11 +694,12 @@ Please include:
 
 ## Handwritten Text Recognition (OCR)
 
-The platform supports extracting handwritten text from uploaded images using Claude 3.5 Sonnet via the OpenRouter API. OCR runs in parallel with YOLO object detection.
+The platform extracts handwritten text from uploaded images using Claude 3.5 Sonnet via the OpenRouter API. OCR runs in parallel with YOLO object detection.
 
 ### Configuration
 
-Set the `OPENROUTER_API_KEY` environment variable (see `.env.example`):
+1. Copy `.env.example` to `.env` (if not done already)
+2. Set your OpenRouter API key:
 
 ```bash
 OPENROUTER_API_KEY=sk-or-your-key-here
@@ -703,19 +707,32 @@ OPENROUTER_API_KEY=sk-or-your-key-here
 
 Get a key at [openrouter.ai](https://openrouter.ai/).
 
-### API Response
+### Test with the Included Handwritten Image
 
-When OCR is enabled, detection results include a `text_extraction` field:
+A sample handwritten note is included in `test_images/nota-a-mano.jpeg`.
+
+```bash
+# 1. Start services (with your .env set)
+docker compose up -d
+
+# 2. Upload the handwritten test image
+curl -s -F "file=@test_images/nota-a-mano.jpeg" \
+  http://localhost:8000/api/v1/images/upload
+# Returns: {"task_id": "<uuid>", "status": "processing"}
+
+# 3. Fetch the result (replace <task_id> with the value above)
+curl -s http://localhost:8000/api/v1/results/<task_id> | python3 -m json.tool
+```
+
+### Expected Response
 
 ```json
 {
-  "image_id": "uuid",
+  "image_id": "<uuid>",
   "status": "success",
-  "detections": [
-    {"label": "person", "box": {"x": 100, "y": 200, "w": 50, "h": 100}, "confidence": 0.94}
-  ],
+  "detections": [],
   "text_extraction": {
-    "text": "Meeting notes:\n- Review Q2\n- Budget cut 10%",
+    "text": "<extracted handwritten text>",
     "confidence": 0.85,
     "model": "claude-3.5-sonnet",
     "error": null
@@ -723,9 +740,23 @@ When OCR is enabled, detection results include a `text_extraction` field:
 }
 ```
 
-If OCR fails but object detection succeeds, `status` is `"partial"` and `text_extraction.error` contains the failure reason.
+| `status` | Meaning |
+|----------|---------|
+| `success` | Both YOLO and OCR completed |
+| `partial` | YOLO succeeded, OCR failed (check `text_extraction.error`) |
 
-If no handwriting is detected, `text_extraction.text` is `null` and `confidence` is `1.0`.
+If no handwriting is found, `text_extraction.text` is `null` and `confidence` is `1.0`.
+
+### All Test Images
+
+| File | Best for |
+|------|----------|
+| `test_images/nota-a-mano.jpeg` | OCR / handwritten text extraction |
+| `test_images/cats_couch.jpg` | Object detection (cats, couch, remote) |
+| `test_images/street_scene.jpg` | Object detection (cars, people) |
+| `test_images/office_desk.jpg` | Object detection (laptop, keyboard) |
+| `test_images/kitchen_scene.jpg` | Object detection (fruits, utensils) |
+| `test_images/living_room.jpg` | Object detection (furniture) |
 
 ## License
 
