@@ -1,6 +1,5 @@
 """End-to-end integration tests for handwritten text extraction feature."""
 
-import asyncio
 import os
 from io import BytesIO
 
@@ -23,7 +22,7 @@ def sample_handwritten_image() -> bytes:
     try:
         # Try to use a system font, fallback to default if not available
         font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 40)
-    except (OSError, IOError):
+    except OSError:
         # Use default font if no TrueType font available
         font = ImageFont.load_default()
 

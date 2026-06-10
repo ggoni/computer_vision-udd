@@ -2,8 +2,9 @@
 
 import asyncio
 from io import BytesIO
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from PIL import Image
 
@@ -23,14 +24,14 @@ class TestOCRErrorHandling:
 
         with patch("httpx.AsyncClient.post") as mock_post:
             # Simulate timeout
-            mock_post.side_effect = asyncio.TimeoutError("Request timed out")
+            mock_post.side_effect = TimeoutError("Request timed out")
 
             result = await service.extract_text(img)
 
             # Verify graceful error handling
             assert result["text"] is None
             assert result["confidence"] == 0.0
-            assert "timeout" in result["error"].lower()
+            assert "timed out" in result["error"].lower()
             assert result["error"] is not None
 
     @pytest.mark.asyncio
@@ -43,6 +44,9 @@ class TestOCRErrorHandling:
             mock_response = MagicMock()
             mock_response.status_code = 401
             mock_response.text = "Unauthorized"
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                "401 Client Error: Unauthorized", request=MagicMock(), response=MagicMock()
+            )
             mock_post.return_value = mock_response
 
             result = await service.extract_text(img)
@@ -60,6 +64,9 @@ class TestOCRErrorHandling:
             mock_response = MagicMock()
             mock_response.status_code = 429
             mock_response.text = "Rate limit exceeded"
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                "429 Too Many Requests", request=MagicMock(), response=MagicMock()
+            )
             mock_post.return_value = mock_response
 
             result = await service.extract_text(img)
@@ -77,6 +84,9 @@ class TestOCRErrorHandling:
             mock_response = MagicMock()
             mock_response.status_code = 503
             mock_response.text = "Service Unavailable"
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                "503 Service Unavailable", request=MagicMock(), response=MagicMock()
+            )
             mock_post.return_value = mock_response
 
             result = await service.extract_text(img)
@@ -257,6 +267,9 @@ class TestOCRRetryBehavior:
                 if call_count <= 1:
                     # First call fails temporarily
                     mock_response.status_code = 503
+                    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                        "503 Service Unavailable", request=MagicMock(), response=MagicMock()
+                    )
                 else:
                     # Subsequent calls succeed
                     mock_response.status_code = 200

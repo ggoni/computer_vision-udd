@@ -8,6 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import httpx
+
 from src.core.config import get_settings
 
 if TYPE_CHECKING:

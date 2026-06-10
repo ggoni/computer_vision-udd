@@ -1,6 +1,5 @@
 """Unit tests for OpenRouterOCRService."""
 
-import base64
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,11 +27,10 @@ async def test_extract_text_success(ocr_service, mock_image):
     expected_text = "Hello World\nThis is handwritten text"
 
     with patch("src.services.openrouter_ocr_service.httpx.AsyncClient") as mock_client:
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [{"message": {"content": expected_text}}]
         }
-        mock_response.raise_for_status = AsyncMock()
 
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(
             return_value=mock_response
@@ -50,11 +48,10 @@ async def test_extract_text_success(ocr_service, mock_image):
 async def test_extract_text_no_handwriting(ocr_service, mock_image):
     """Test when no handwriting is detected."""
     with patch("src.services.openrouter_ocr_service.httpx.AsyncClient") as mock_client:
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [{"message": {"content": "NO_HANDWRITING"}}]
         }
-        mock_response.raise_for_status = AsyncMock()
 
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(
             return_value=mock_response
@@ -110,11 +107,10 @@ async def test_extract_text_image_conversion(ocr_service):
     gray_img = Image.new("L", (100, 100), color=128)
 
     with patch("src.services.openrouter_ocr_service.httpx.AsyncClient") as mock_client:
-        mock_response = AsyncMock()
+        mock_response = MagicMock()
         mock_response.json.return_value = {
             "choices": [{"message": {"content": "Test text"}}]
         }
-        mock_response.raise_for_status = AsyncMock()
 
         mock_client.return_value.__aenter__.return_value.post = AsyncMock(
             return_value=mock_response

@@ -6,20 +6,19 @@ in parallel, combining results, and storing them.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from io import BytesIO
 from typing import TYPE_CHECKING, Any
-from uuid import UUID
 
 from PIL import Image
 
 from src.services.openrouter_ocr_service import OpenRouterOCRService
 from src.services.yolos_cv_service import YOLOSCVService
-from src.utils.file_storage import FileStorage
 
 if TYPE_CHECKING:
-    pass
+    from uuid import UUID
+
+    from src.utils.file_storage import FileStorage
 
 logger = logging.getLogger(__name__)
 
