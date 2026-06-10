@@ -1,3 +1,18 @@
+
+
+class TextExtractionSchema(BaseModel):
+    """Schema for handwritten text extraction results from OpenRouter."""
+
+    text: str | None = Field(
+        None, description="Extracted handwritten text or None if no handwriting found"
+    )
+    confidence: float = Field(
+        ..., ge=0.0, le=1.0, description="Confidence score for the extraction"
+    )
+    model: str = Field(..., description="Model used for extraction (e.g., claude-3.5-sonnet)")
+    error: str | None = Field(
+        None, description="Error message if extraction failed"
+    )
 """Pydantic schemas for Detection model."""
 
 from datetime import datetime

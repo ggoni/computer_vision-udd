@@ -69,7 +69,6 @@ curl -F "file=@/path/to/image.jpg" http://localhost:8000/api/v1/images/upload
 
 ---
 
-## Alternative Setup Methods
 
 ### Development Setup (For Contributors)
 
@@ -113,10 +112,6 @@ curl -F "file=@/path/to/image.jpg" http://localhost:8000/api/v1/images/upload
    PYTHONPATH=. uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-4. **Start the frontend** (in a new terminal)
-   ```bash
-   cd frontend
-   
    # Install dependencies
    npm install
    
@@ -148,7 +143,6 @@ docker-compose logs frontend
 
 # Rebuild after code changes
 docker-compose up -d --build
-
 # Remove everything (including data)
 docker-compose down -v
 ```

@@ -65,6 +65,13 @@ class Settings(BaseSettings):
         default=None, description="Secret key for sessions/JWT (required in production)"
     )
 
+    # External API Configuration
+    OPENROUTER_API_KEY: str = Field(
+        default="",
+        validation_alias="OPENROUTER_API_KEY",
+        description="OpenRouter API key for vision models (required for OCR features)",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
