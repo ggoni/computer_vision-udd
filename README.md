@@ -198,10 +198,19 @@ This provides the core application (API + Frontend + Database) without monitorin
 
 #### 3. Image Analysis
 - From the **Image Detail** page, click "Analyze Image"
-- The system will run YOLO object detection
-- Detected objects will be overlaid on the image with bounding boxes
+- The system runs two complementary analyses in parallel:
+  - **YOLO object detection** draws bounding boxes on the image
+  - **Gemini vision classification** identifies objects without class restrictions
 - Toggle the overlay on/off with the "Toggle Overlay" button
 - Each detection shows label and confidence score
+
+#### A note on YOLO and COCO
+
+YOLOS is trained on the COCO (Common Objects in Context) dataset, which defines exactly 80 object classes: person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, traffic light, fire hydrant, stop sign, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, and so on.
+
+When the model encounters an object that does not exist in those 80 classes — for example, a llama, alpaca, or capybara — it cannot return "unknown". Instead it picks the closest class in its embedding space, often producing incorrect labels (e.g., a llama detected as "dog" with 96% confidence).
+
+This is not a bug; it is a fundamental limitation of closed-vocabulary detectors. The Gemini classification step is added precisely to cover this gap: it is not limited to any fixed set of classes and can identify arbitrary objects, returning the correct label alongside YOLO's bounding boxes.
 
 #### 4. Browse All Detections
 - Visit the **Detections** page for a global view of all detections
