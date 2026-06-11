@@ -4,8 +4,8 @@
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
-[![Tests](https://img.shields.io/badge/tests-106%20passing-success.svg)](#running-tests)
-[![Coverage](https://img.shields.io/badge/coverage-72%25-yellow.svg)](#running-tests)
+[![Tests](https://img.shields.io/badge/tests-134%20passing-success.svg)](#running-tests)
+[![Coverage](https://img.shields.io/badge/coverage-76%25-yellowgreen.svg)](#running-tests)
 
 FastAPI-based backend providing image upload, object detection analysis, and persistent storage for computer vision applications.
 
@@ -513,7 +513,7 @@ docker/
 ```bash
 cd backend
 
-# Run all tests (106 tests, 72% coverage)
+# Run all tests (137 tests, 76% coverage)
 uv run pytest
 
 # Run with coverage report
@@ -527,8 +527,8 @@ uv run pytest tests/integration/ -v
 ```
 
 **Test Suite Coverage:**
-- ✅ 106 total tests passing
-- ✅ 72% code coverage (866/1198 lines)
+- ✅ 134 total tests passing (3 skipped, 137 collected)
+- ✅ 76% code coverage (972/1284 lines)
 - ✅ Unit tests for services, repositories, and utilities
 - ✅ Integration tests for API routes and database operations
 - ✅ Test isolation with automatic rollback fixtures
