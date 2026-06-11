@@ -23,7 +23,7 @@ class OpenRouterOCRService:
     def __init__(self, api_key: str | None = None):
         settings = get_settings()
         self._api_key = api_key or settings.OPENROUTER_API_KEY
-        self._model = "claude-3.5-sonnet"
+        self._model = "anthropic/claude-sonnet-4.6"
         self._base_url = "https://openrouter.ai/api/v1/chat/completions"
 
     async def extract_text(self, image: Image.Image) -> dict[str, Any]:
@@ -45,9 +45,14 @@ class OpenRouterOCRService:
         if image.mode != "RGB":
             image = image.convert("RGB")
 
-        # Convert to base64
+        # Resize to max 1024px to keep payload under OpenRouter limits
+        max_size = 1024
+        if image.width > max_size or image.height > max_size:
+            image.thumbnail((max_size, max_size))
+
+        # Encode as JPEG (much smaller than PNG)
         buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
+        image.save(buffer, format="JPEG", quality=85)
         base64_image = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
 
         try:
@@ -66,11 +71,9 @@ class OpenRouterOCRService:
                                 "role": "user",
                                 "content": [
                                     {
-                                        "type": "image",
-                                        "source": {
-                                            "type": "base64",
-                                            "media_type": "image/png",
-                                            "data": base64_image,
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:image/jpeg;base64,{base64_image}",
                                         },
                                     },
                                     {
@@ -90,6 +93,15 @@ class OpenRouterOCRService:
 
                 response.raise_for_status()
                 data = response.json()
+                if "choices" not in data:
+                    error_msg = data.get("error", {}).get("message", str(data))
+                    logger.error("OpenRouter unexpected response: %s", data)
+                    return {
+                        "text": None,
+                        "confidence": 0.0,
+                        "model": self._model,
+                        "error": error_msg,
+                    }
                 extracted = data["choices"][0]["message"]["content"].strip()
 
                 if extracted == "NO_HANDWRITING":
