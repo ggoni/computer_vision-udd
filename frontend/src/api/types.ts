@@ -30,11 +30,23 @@ export interface TextExtraction {
   error: string | null;
 }
 
+export interface ClassifiedObject {
+  label: string;
+  confidence: number;
+}
+
+export interface ImageClassification {
+  objects: ClassifiedObject[];
+  model: string;
+  error: string | null;
+}
+
 export interface AnalysisResult {
   image_id: string;
   status: string;
   detections: DetectionResponse[];
   text_extraction: TextExtraction | null;
+  classification: ImageClassification | null;
 }
 
 export interface PaginatedResponse<T> {

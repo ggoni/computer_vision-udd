@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getImage, analyzeImage, listImageDetections } from '../api/client';
-import type { ImageResponse, DetectionResponse, AnalysisResult } from '../api/types';
+import type { ImageResponse, DetectionResponse, AnalysisResult, ImageClassification } from '../api/types';
 import DetectionsOverlay from '../components/DetectionsOverlay';
 
 const ImageDetailPage: React.FC = () => {
@@ -48,6 +48,7 @@ const ImageDetailPage: React.FC = () => {
   const img = imgQuery.data!;
   const fileUrl = `/api/v1/images/${img.id}/file`;
   const ocr = analysisResult?.text_extraction;
+  const cls: ImageClassification | null | undefined = analysisResult?.classification;
 
   return (
     <div>
@@ -59,13 +60,27 @@ const ImageDetailPage: React.FC = () => {
       <button onClick={() => setShowDetections((s) => !s)} disabled={detQuery.isLoading}>
         {showDetections ? 'Ocultar Detecciones' : 'Mostrar Detecciones'}
       </button>
+      {cls && (
+        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#ffffff', borderRadius: 6, border: '1px solid #ddd' }}>
+          <strong style={{ color: '#000000' }}>Clasificacion (Gemini):</strong>{' '}
+          {cls.error ? (
+            <span style={{ color: 'red' }}>Error: {cls.error}</span>
+          ) : cls.objects.length === 0 ? (
+            <span style={{ color: '#888' }}>Sin resultados</span>
+          ) : (
+            <span style={{ color: '#000000' }}>
+              {cls.objects.map((o) => `${o.label} (${(o.confidence * 100).toFixed(0)}%)`).join(', ')}
+            </span>
+          )}
+        </div>
+      )}
       {ocr && (
-        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f5f5f5', borderRadius: 6 }}>
-          <strong>Texto extraido:</strong>{' '}
+        <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#ffffff', borderRadius: 6, border: '1px solid #ddd' }}>
+          <strong style={{ color: '#000000' }}>Texto extraido:</strong>{' '}
           {ocr.error ? (
             <span style={{ color: 'red' }}>Error OCR: {ocr.error}</span>
           ) : ocr.text ? (
-            <span>{ocr.text}</span>
+            <span style={{ color: '#000000' }}>{ocr.text}</span>
           ) : (
             <span style={{ color: '#888' }}>No se encontro texto manuscrito</span>
           )}
