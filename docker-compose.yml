@@ -31,7 +31,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://cvuser:cvpass123@postgres:5432/computer_vision_db
       MODEL_NAME: hustvl/yolos-tiny
-      CONFIDENCE_THRESHOLD: 0.5
+      CONFIDENCE_THRESHOLD: 0.75
       APP_ENV: production
       SECRET_KEY: your-secret-key-here-production-use-secure-value
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
