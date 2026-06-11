@@ -34,7 +34,7 @@ services:
       CONFIDENCE_THRESHOLD: 0.5
       APP_ENV: production
       SECRET_KEY: your-secret-key-here-production-use-secure-value
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
     ports:
       - "8000:8000"
     volumes:
