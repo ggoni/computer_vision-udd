@@ -35,7 +35,11 @@ const ImageDetailPage: React.FC = () => {
 
   const analyze = useMutation({
     mutationFn: async () => analyzeImage(id!),
-    onSuccess: () => setShowDetections(true),
+    onSuccess: () => {
+      setShowDetections(true);
+      queryClient.invalidateQueries({ queryKey: ['image', id] });
+      queryClient.invalidateQueries({ queryKey: ['image-dets', id] });
+    },
   });
 
   if (imgQuery.isLoading) return <p>Cargando...</p>;
