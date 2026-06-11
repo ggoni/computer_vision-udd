@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
 from src.schemas.common import PaginatedResponse
-from src.schemas.detection import DetectionResponse, DetectionResultSchema, TextExtractionSchema
+from src.schemas.detection import (
+    DetectionResponse,
+    DetectionResultSchema,
+    ImageClassificationSchema,
+    TextExtractionSchema,
+)
 from src.services.openrouter_ocr_service import OpenRouterOCRService
 from src.utils import FileStorage, preprocess_image
 
@@ -75,14 +81,27 @@ class DetectionService:
 
         created = await self._det_repo.create_many(to_create) if to_create else []
 
-        # Run OCR (best-effort — does not fail the whole request)
+        # Run OCR and Gemini classification concurrently (both best-effort)
+        ocr_service = OpenRouterOCRService()
         ocr_result: TextExtractionSchema | None = None
+        classification_result: ImageClassificationSchema | None = None
         try:
-            ocr_service = OpenRouterOCRService()
-            raw_ocr = await ocr_service.extract_text(pil_img)
-            ocr_result = TextExtractionSchema(**raw_ocr)
+            raw_ocr, raw_cls = await asyncio.gather(
+                ocr_service.extract_text(pil_img),
+                ocr_service.classify_objects(pil_img),
+                return_exceptions=True,
+            )
+            if isinstance(raw_ocr, Exception):
+                logger.warning("OCR extraction failed (non-fatal): %s", raw_ocr)
+            else:
+                ocr_result = TextExtractionSchema(**raw_ocr)
+
+            if isinstance(raw_cls, Exception):
+                logger.warning("Image classification failed (non-fatal): %s", raw_cls)
+            else:
+                classification_result = ImageClassificationSchema(**raw_cls)
         except Exception as exc:
-            logger.warning("OCR extraction failed (non-fatal): %s", exc)
+            logger.warning("Vision analysis failed (non-fatal): %s", exc)
 
         # Update image status
         status = "partial" if (ocr_result and ocr_result.error) else "success"
@@ -93,6 +112,7 @@ class DetectionService:
             status=status,
             detections=[DetectionResponse.model_validate(x) for x in created],
             text_extraction=ocr_result,
+            classification=classification_result,
         )
 
     async def get_detections(self, image_id: UUID) -> list[DetectionResponse]:

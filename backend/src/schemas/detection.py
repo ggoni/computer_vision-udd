@@ -20,6 +20,21 @@ class TextExtractionSchema(BaseModel):
     error: str | None = Field(None, description="Error message if extraction failed")
 
 
+class ClassifiedObject(BaseModel):
+    """A single object identified by the vision model."""
+
+    label: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+
+
+class ImageClassificationSchema(BaseModel):
+    """Schema for Gemini-based image classification results."""
+
+    objects: list[ClassifiedObject] = Field(default_factory=list)
+    model: str
+    error: str | None = None
+
+
 class BoundingBox(BaseModel):
     """Schema for bounding box coordinates."""
 
@@ -96,9 +111,10 @@ class DetectionWithBBox(BaseModel):
 
 
 class DetectionResultSchema(BaseModel):
-    """Schema for combined detection + OCR API response."""
+    """Schema for combined detection + OCR + classification API response."""
 
     image_id: str
     status: str = Field(..., pattern="^(success|partial)$")
     detections: list[DetectionResponse] = Field(default_factory=list)
     text_extraction: TextExtractionSchema | None = None
+    classification: ImageClassificationSchema | None = None
