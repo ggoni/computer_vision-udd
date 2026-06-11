@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db.session import get_db
 from ...schemas.common import PaginatedResponse
-from ...schemas.detection import DetectionResponse
+from ...schemas.detection import DetectionResponse, DetectionResultSchema
 from ...services import DetectionRepository, DetectionService, ImageRepository
 from ...services.yolos_cv_service import YOLOSCVService
 from ...utils import FileStorage
@@ -27,19 +27,18 @@ async def get_detection_service(db: AsyncSession = Depends(get_db)) -> Detection
 
 @router.post(
     "/images/{image_id}/analyze",
-    response_model=list[DetectionResponse],
+    response_model=DetectionResultSchema,
     status_code=status.HTTP_201_CREATED,
 )
 async def analyze_image(
     image_id: UUID, service: DetectionService = Depends(get_detection_service)
 ):
-    """Run object detection on an uploaded image.
+    """Run object detection + OCR on an uploaded image.
 
-    Returns list of detections. Updates image status to 'completed'.
+    Returns detections and extracted text. Updates image status to 'completed'.
     """
     try:
-        detections = await service.analyze_image(image_id)
-        return detections
+        return await service.analyze_image(image_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 

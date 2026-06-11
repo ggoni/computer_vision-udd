@@ -23,6 +23,20 @@ export interface DetectionResponse {
   updated_at: string;
 }
 
+export interface TextExtraction {
+  text: string | null;
+  confidence: number;
+  model: string;
+  error: string | null;
+}
+
+export interface AnalysisResult {
+  image_id: string;
+  status: string;
+  detections: DetectionResponse[];
+  text_extraction: TextExtraction | null;
+}
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;

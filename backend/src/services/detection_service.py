@@ -6,7 +6,8 @@ import logging
 from typing import TYPE_CHECKING
 
 from src.schemas.common import PaginatedResponse
-from src.schemas.detection import DetectionResponse
+from src.schemas.detection import DetectionResponse, DetectionResultSchema, TextExtractionSchema
+from src.services.openrouter_ocr_service import OpenRouterOCRService
 from src.utils import FileStorage, preprocess_image
 
 if TYPE_CHECKING:
@@ -37,10 +38,10 @@ class DetectionService:
         self._img_repo = image_repo
         self._storage = storage or FileStorage()
 
-    async def analyze_image(self, image_id: UUID) -> list[DetectionResponse]:
-        """Run CV analysis for an image and persist detections.
+    async def analyze_image(self, image_id: UUID) -> DetectionResultSchema:
+        """Run CV analysis + OCR for an image and persist detections.
 
-        Returns list of DetectionResponse.
+        Returns DetectionResultSchema with detections and text_extraction.
         """
         image = await self._img_repo.get_by_id(image_id)
         if image is None:
@@ -51,7 +52,7 @@ class DetectionService:
         img_bytes = file_path.read_bytes()
         pil_img: Image.Image = preprocess_image(img_bytes)
 
-        # Run CV
+        # Run YOLO detection
         raw = self._cv.detect_objects(pil_img)
 
         # Map to repo format
@@ -74,10 +75,25 @@ class DetectionService:
 
         created = await self._det_repo.create_many(to_create) if to_create else []
 
+        # Run OCR (best-effort — does not fail the whole request)
+        ocr_result: TextExtractionSchema | None = None
+        try:
+            ocr_service = OpenRouterOCRService()
+            raw_ocr = await ocr_service.extract_text(pil_img)
+            ocr_result = TextExtractionSchema(**raw_ocr)
+        except Exception as exc:
+            logger.warning("OCR extraction failed (non-fatal): %s", exc)
+
         # Update image status
+        status = "partial" if (ocr_result and ocr_result.error) else "success"
         await self._img_repo.update_status(image.id, "completed")
 
-        return [DetectionResponse.model_validate(x) for x in created]
+        return DetectionResultSchema(
+            image_id=str(image.id),
+            status=status,
+            detections=[DetectionResponse.model_validate(x) for x in created],
+            text_extraction=ocr_result,
+        )
 
     async def get_detections(self, image_id: UUID) -> list[DetectionResponse]:
         rows = await self._det_repo.get_by_image_id(image_id)

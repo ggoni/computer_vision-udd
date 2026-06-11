@@ -1,4 +1,4 @@
-import { ImageResponse, DetectionResponse, PaginatedResponse } from './types';
+import { ImageResponse, DetectionResponse, AnalysisResult, PaginatedResponse } from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -51,8 +51,8 @@ export async function listImages(params: { page?: number; page_size?: number; st
   return request<PaginatedResponse<ImageResponse>>(`/api/v1/images?${q.toString()}`);
 }
 
-export async function analyzeImage(id: string): Promise<DetectionResponse[]> {
-  return request<DetectionResponse[]>(`/api/v1/images/${id}/analyze`, { method: 'POST' });
+export async function analyzeImage(id: string): Promise<AnalysisResult> {
+  return request<AnalysisResult>(`/api/v1/images/${id}/analyze`, { method: 'POST' });
 }
 
 export async function listImageDetections(id: string): Promise<DetectionResponse[]> {
