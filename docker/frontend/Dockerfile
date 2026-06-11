@@ -35,7 +35,6 @@ RUN --mount=type=cache,target=/root/.npm \
 
 # Copy source code (done after npm install for better caching)
 COPY src ./src
-COPY public ./public
 COPY index.html ./
 COPY vite.config.ts ./
 COPY tsconfig.json ./
