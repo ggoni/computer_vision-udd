@@ -40,7 +40,7 @@ async def test_extract_text_success(ocr_service, mock_image):
 
         assert result["text"] == expected_text
         assert result["confidence"] == 0.85
-        assert result["model"] == "claude-3.5-sonnet"
+        assert result["model"] == "google/gemini-2.5-flash"
         assert result["error"] is None
 
 
@@ -61,7 +61,7 @@ async def test_extract_text_no_handwriting(ocr_service, mock_image):
 
         assert result["text"] is None
         assert result["confidence"] == 1.0
-        assert result["model"] == "claude-3.5-sonnet"
+        assert result["model"] == "google/gemini-2.5-flash"
         assert result["error"] is None
 
 
@@ -129,7 +129,7 @@ def test_init_with_custom_api_key():
     service = OpenRouterOCRService(api_key=custom_key)
 
     assert service._api_key == custom_key
-    assert service._model == "claude-3.5-sonnet"
+    assert service._model == "google/gemini-2.5-flash"
 
 
 def test_init_with_env_api_key():

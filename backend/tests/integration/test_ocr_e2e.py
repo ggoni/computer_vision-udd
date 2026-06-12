@@ -71,7 +71,7 @@ class TestOCREndToEnd:
         assert isinstance(result["confidence"], float)
         assert 0.0 <= result["confidence"] <= 1.0
         assert isinstance(result["model"], str)
-        assert result["model"] == "claude-3.5-sonnet"
+        assert result["model"] == "google/gemini-2.5-flash"
 
         # If extraction succeeded
         if result["error"] is None:
@@ -96,7 +96,7 @@ class TestOCREndToEnd:
         # Blank images should return null text
         assert result["text"] is None
         assert result["confidence"] == 0.85
-        assert result["model"] == "claude-3.5-sonnet"
+        assert result["model"] == "google/gemini-2.5-flash"
         # Error may or may not be set depending on API response
 
     @pytest.mark.asyncio

@@ -102,7 +102,7 @@ async def test_analyze_image_orchestrates_workflow(
     )
 
     results = await service.analyze_image(image_id)
-    assert len(results) == 1
+    assert len(results.detections) == 1
     img_repo.update_status.assert_called_once_with(image_id, "completed")
     det_repo.create_many.assert_called_once()
 
