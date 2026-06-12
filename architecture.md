@@ -6,6 +6,72 @@ Production-ready web application for object detection using computer vision AI m
 
 ---
 
+## Architecture Diagram
+
+```mermaid
+graph TD
+    Browser["Browser - React 18 + TypeScript"]
+
+    subgraph Docker["Docker Compose"]
+        Nginx["Nginx - Reverse Proxy :3000"]
+        Frontend["Frontend - nginx:alpine SPA"]
+        Backend["Backend - FastAPI :8000"]
+        Postgres["PostgreSQL 16"]
+        ModelCache[("Model Cache Volume")]
+
+        Nginx -->|"/ static"| Frontend
+        Nginx -->|"/api/*"| Backend
+        Backend -->|asyncpg| Postgres
+        Backend -->|weights| ModelCache
+    end
+
+    subgraph AI["ML / AI"]
+        YOLOS["YOLOS-tiny - 80 COCO classes - local"]
+        Gemini["Gemini 2.5 Flash - OpenRouter - open vocabulary"]
+    end
+
+    Browser -->|HTTP| Nginx
+    Backend -->|torch inference| YOLOS
+    Backend -->|HTTPS REST| Gemini
+```
+
+**Request flow for image analysis:**
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as Frontend
+    participant API as FastAPI
+    participant YOLO as YOLOS Model
+    participant GM as Gemini 2.5 Flash
+    participant DB as PostgreSQL
+
+    User->>FE: Upload image
+    FE->>API: POST /api/v1/images/upload
+    API->>DB: Save metadata pending
+    API-->>FE: image_id
+
+    User->>FE: Click Analyze
+    FE->>API: POST /api/v1/images/id/analyze
+    API->>YOLO: detect_objects
+    YOLO-->>API: label + bbox + score list
+    API->>DB: INSERT detections
+
+    par concurrent
+        API->>GM: extract_text
+        GM-->>API: text + confidence
+    and
+        API->>GM: classify_objects
+        GM-->>API: label + confidence list
+    end
+
+    API->>DB: UPDATE status completed
+    API-->>FE: detections + text_extraction + classification
+    FE-->>User: Bounding boxes + Gemini labels
+```
+
+---
+
 ## Technology Stack
 
 ### Backend
