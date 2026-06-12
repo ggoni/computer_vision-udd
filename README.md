@@ -7,7 +7,7 @@
 [![Tests](https://img.shields.io/badge/tests-134%20passing-success.svg)](#running-tests)
 [![Coverage](https://img.shields.io/badge/coverage-76%25-yellowgreen.svg)](#running-tests)
 
-FastAPI-based backend providing image upload, object detection analysis, and persistent storage for computer vision applications.
+FastAPI-based backend providing image upload, dual-model analysis (YOLOS object detection + Gemini open-vocabulary classification and OCR), and persistent storage for computer vision applications.
 
 ## Quick Start
 
@@ -32,9 +32,11 @@ docker compose up -d
 
 ### What Gets Started
 - ✅ **Frontend**: React application for image upload and visualization
-- ✅ **Backend**: FastAPI server with YOLO object detection  
+- ✅ **Backend**: FastAPI server with YOLOS detection + Gemini classification
 - ✅ **Database**: PostgreSQL for metadata storage
 - ✅ **Persistent Storage**: Local bind mount for uploaded images
+
+> **Required:** set `OPENROUTER_API_KEY` in your `.env` before starting. Get a key at https://openrouter.ai
 
 ### Quick Commands
 ```bash
@@ -235,6 +237,34 @@ curl -X POST "http://localhost:8000/api/v1/images/{image_id}/analyze" \
   -H "accept: application/json"
 ```
 
+The response includes three sections:
+
+```json
+{
+  "image_id": "...",
+  "status": "success",
+  "detections": [
+    { "label": "perro", "confidence_score": 0.97, "bbox_xmin": 160, ... }
+  ],
+  "classification": {
+    "objects": [
+      { "label": "llama", "confidence": 0.97 },
+      { "label": "wooden wall", "confidence": 0.85 }
+    ],
+    "model": "google/gemini-2.5-flash"
+  },
+  "text_extraction": {
+    "text": null,
+    "confidence": 1.0,
+    "model": "google/gemini-2.5-flash"
+  }
+}
+```
+
+- `detections` — YOLOS bounding boxes (limited to 80 COCO classes)
+- `classification` — Gemini open-vocabulary labels (no class limit)
+- `text_extraction` — Gemini OCR for handwritten text
+
 #### Get All Images (Paginated)
 ```bash
 curl "http://localhost:8000/api/v1/images?page=1&page_size=10"
@@ -257,6 +287,7 @@ curl "http://localhost:8000/api/v1/images/{image_id}/file" --output downloaded_i
 ```bash
 # Required
 DATABASE_URL="postgresql+asyncpg://user:password@localhost:5432/cv_db"
+OPENROUTER_API_KEY="sk-or-v1-..."        # https://openrouter.ai
 
 # Optional (with defaults)
 APP_ENV="development"                    # development, production, test
@@ -264,6 +295,7 @@ UPLOAD_DIR="./uploads"                   # File storage directory
 MAX_FILE_SIZE=5242880                    # 5MB in bytes
 ALLOWED_EXTENSIONS="jpg,jpeg,png,webp"   # Comma-separated
 MODEL_NAME="hustvl/yolos-tiny"          # Hugging Face model
+CONFIDENCE_THRESHOLD=0.75               # YOLOS minimum confidence
 ```
 
 #### Frontend Configuration
