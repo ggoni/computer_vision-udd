@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: cvpass123
       POSTGRES_DB: computer_vision_db
     ports:
-      - "5432:5432"
+      # ponytail: host 5433 — native PostgreSQL 16 owns 5432 on this Mac
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
