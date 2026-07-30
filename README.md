@@ -28,7 +28,7 @@ docker compose up -d
 - **Frontend**: http://localhost:3000
 - **API Documentation**: http://localhost:8000/docs
 - **API Health**: http://localhost:8000/health
-- **PostgreSQL**: localhost:5432 (cvuser/cvpass123)
+- **PostgreSQL**: localhost:5433 (cvuser/cvpass123)
 
 ### What Gets Started
 - ✅ **Frontend**: React application for image upload and visualization
